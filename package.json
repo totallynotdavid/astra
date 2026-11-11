@@ -1,0 +1,8 @@
+{
+  "name": "astra",
+  "private": true,
+  "workspaces": ["web", "tools/contract"],
+  "devDependencies": {
+    "oxfmt": "^0.78.0"
+  }
+}

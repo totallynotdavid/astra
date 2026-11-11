@@ -1,0 +1,12 @@
+{
+  "name": "@astra/contract-tools",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate": "bun --bun openapi-typescript ../../contract/openapi.json -o ../../web/src/contract/api.ts"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.13.0",
+    "typescript": "^6"
+  }
+}
