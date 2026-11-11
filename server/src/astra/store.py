@@ -997,14 +997,9 @@ class Store:
                 f"{where} ORDER BY r.started_at, r.id",
                 params,
             ).fetchall()
-            findings = {
-                row["model_run_id"]: row
-                for row in self._db.execute(
-                    "SELECT * FROM findings ORDER BY id"
-                ).fetchall()
-            }
+            findings = self._db.execute("SELECT * FROM findings ORDER BY id").fetchall()
         grouped: dict[int, list[Finding]] = {}
-        for row in findings.values():
+        for row in findings:
             grouped.setdefault(row["model_run_id"], []).append(self._to_finding(row))
         return [
             ModelRun(
