@@ -3,6 +3,13 @@
 The run sheet for showing ASTRA end to end, with the board or with the
 simulator. Everything runs on one laptop; no network is needed.
 
+Run the event from the `v0.1.0` tag, the version this sheet was checked
+against:
+
+```sh
+git fetch --tags && git switch --detach v0.1.0 && mise run install
+```
+
 ## Start the service
 
 With the board, plug it in and find its port (`/dev/ttyUSB0` or similar).
