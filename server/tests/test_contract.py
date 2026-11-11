@@ -47,20 +47,22 @@ def test_invalid_line_is_rejected(old: str, new: str) -> None:
 
 
 def test_health_reports_each_part() -> None:
-    response = TestClient(create_app()).get("/health")
+    response = TestClient(create_app(db_path=":memory:")).get("/health")
 
     assert response.status_code == 200
     assert response.json() == {
         "schema_version": "1.0",
         "serial": "disconnected",
         "model": "unavailable",
-        "storage": "error",
+        "storage": "ok",
     }
 
 
 def test_openapi_carries_socket_and_serial_payloads() -> None:
     schemas = (
-        TestClient(create_app()).get("/openapi.json").json()["components"]["schemas"]
+        TestClient(create_app(db_path=":memory:"))
+        .get("/openapi.json")
+        .json()["components"]["schemas"]
     )
 
     assert set(schemas["SocketMessage"]["discriminator"]["mapping"]) == {
