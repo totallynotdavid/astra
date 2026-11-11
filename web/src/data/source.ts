@@ -16,6 +16,8 @@ export type FindingPatch = components["schemas"]["FindingPatch"];
 export type ModelRun = components["schemas"]["ModelRun"];
 export type Modality = components["schemas"]["Modality"];
 export type CrewAssessment = components["schemas"]["CrewAssessment"];
+export type User = components["schemas"]["User"];
+export type UserRole = components["schemas"]["UserRole"];
 export type ChannelState = "connecting" | "open";
 
 export interface InitialState {

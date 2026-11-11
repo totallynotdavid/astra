@@ -24,23 +24,12 @@ type Reading = components["schemas"]["Reading"];
 type Insight = components["schemas"]["Insight"];
 type ReplayRequest = components["schemas"]["ReplayRequest"];
 
-async function get<T>(path: string): Promise<T> {
-  const response = await fetch(path);
-  if (!response.ok) throw new Error(`GET ${path} respondió ${response.status}`);
-  return (await response.json()) as T;
-}
+type Get = <T>(path: string) => Promise<T>;
+type Send = <T>(method: string, path: string, body: unknown) => Promise<T>;
 
-async function send<T>(method: string, path: string, body: unknown): Promise<T> {
-  const response = await fetch(path, {
-    method,
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (!response.ok) throw new Error(`${method} ${path} respondió ${response.status}`);
-  return (await response.json()) as T;
-}
+const SESSION_ENDED = 1008;
 
-async function crewSnapshot(devices: DeviceStatus[]): Promise<CrewSnapshot> {
+async function crewSnapshot(get: Get, devices: DeviceStatus[]): Promise<CrewSnapshot> {
   const [members, alerts, runs] = await Promise.all([
     get<CrewMember[]>("/api/v1/crew"),
     get<Alert[]>("/api/v1/alerts"),
@@ -67,7 +56,29 @@ async function crewSnapshot(devices: DeviceStatus[]): Promise<CrewSnapshot> {
   return { members, alerts, latest, findings };
 }
 
-export function createApiSource(): AstraSource {
+export function createApiSource(onSessionEnd: () => void = () => {}): AstraSource {
+  async function answer(method: string, path: string, response: Response): Promise<unknown> {
+    if (response.status === 401) {
+      onSessionEnd();
+      throw new Error("La sesión terminó. Inicia sesión de nuevo.");
+    }
+    if (!response.ok) throw new Error(`${method} ${path} respondió ${response.status}`);
+    return response.json();
+  }
+
+  const get: Get = async <T>(path: string) => (await answer("GET", path, await fetch(path))) as T;
+
+  const send: Send = async <T>(method: string, path: string, body: unknown) =>
+    (await answer(
+      method,
+      path,
+      await fetch(path, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }),
+    )) as T;
+
   let stopped = false;
   let socket: WebSocket | null = null;
   let retry = 0;
@@ -129,7 +140,7 @@ export function createApiSource(): AstraSource {
       ? await get<Insight | null>(`/api/v1/insights/latest?device_id=${deviceId}`)
       : null;
     try {
-      sink.syncCrew?.(await crewSnapshot(devices));
+      sink.syncCrew?.(await crewSnapshot(get, devices));
     } catch (error) {
       const detail = error instanceof Error ? error.message : String(error);
       sink.syncCrew?.({ error: `No se pudo cargar la tripulación. ${detail}` });
@@ -180,9 +191,13 @@ export function createApiSource(): AstraSource {
         );
       }
     };
-    ws.onclose = () => {
+    ws.onclose = (event) => {
       socket = null;
       if (stopped) return;
+      if (event.code === SESSION_ENDED) {
+        onSessionEnd();
+        return;
+      }
       sink.channel("connecting");
       const delay = Math.min(8000, 500 * 2 ** retry);
       retry += 1;
@@ -235,15 +250,7 @@ export function createApiSource(): AstraSource {
     },
     async startReplay(sessionId: string, speed: number): Promise<Session> {
       const body: ReplayRequest = { session_id: sessionId, speed };
-      const response = await fetch("/api/v1/demo/replay", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (!response.ok) {
-        throw new Error(`POST /api/v1/demo/replay respondió ${response.status}`);
-      }
-      return (await response.json()) as Session;
+      return send<Session>("POST", "/api/v1/demo/replay", body);
     },
   };
 }

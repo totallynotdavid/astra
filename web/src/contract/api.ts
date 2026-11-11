@@ -39,6 +39,57 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/auth/login": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Login */
+    post: operations["login_api_v1_auth_login_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/auth/logout": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Logout */
+    post: operations["logout_api_v1_auth_logout_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/auth/me": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Me */
+    get: operations["me_api_v1_auth_me_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/crew": {
     parameters: {
       query?: never;
@@ -261,6 +312,41 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/users": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Users */
+    get: operations["users_api_v1_users_get"];
+    put?: never;
+    /** Post User */
+    post: operations["post_user_api_v1_users_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/users/{user_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** Patch User */
+    patch: operations["patch_user_api_v1_users__user_id__patch"];
+    trace?: never;
+  };
   "/health": {
     parameters: {
       query?: never;
@@ -328,12 +414,13 @@ export interface components {
       id: number;
       status: components["schemas"]["AlertStatus"];
     };
-    /** AlertReviewRequest */
+    /**
+     * AlertReviewRequest
+     * @description A review. The actor is the signed-in user, never part of the request.
+     */
     AlertReviewRequest: {
       /** Action */
       action?: string | null;
-      /** Actor */
-      actor: string;
       /**
        * Comment
        * @default
@@ -652,6 +739,13 @@ export interface components {
      * @enum {string}
      */
     LinkStatus: "connected" | "stale" | "disconnected";
+    /** LoginRequest */
+    LoginRequest: {
+      /** Password */
+      password: string;
+      /** Username */
+      username: string;
+    };
     /**
      * Measurements
      * @description One second of sensor output. A value the sensor could not give is null.
@@ -790,6 +884,16 @@ export interface components {
        */
       started_at: string;
       status: components["schemas"]["ModelRunStatus"];
+    };
+    /** NewUser */
+    NewUser: {
+      /** Crew Member Id */
+      crew_member_id?: string | null;
+      /** Password */
+      password: string;
+      role: components["schemas"]["UserRole"];
+      /** Username */
+      username: string;
     };
     /**
      * PpgContact
@@ -967,6 +1071,44 @@ export interface components {
        */
       type: "telemetry";
     };
+    /**
+     * User
+     * @description A local account. The password hash never leaves the server.
+     */
+    User: {
+      /** Active */
+      active: boolean;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /** Crew Member Id */
+      crew_member_id: string | null;
+      /** Id */
+      id: string;
+      role: components["schemas"]["UserRole"];
+      /** Username */
+      username: string;
+    };
+    /**
+     * UserPatch
+     * @description Fields left out stay as they are. `crew_member_id: null` clears it.
+     */
+    UserPatch: {
+      /** Active */
+      active?: boolean | null;
+      /** Crew Member Id */
+      crew_member_id?: string | null;
+      /** Password */
+      password?: string | null;
+      role?: components["schemas"]["UserRole"] | null;
+    };
+    /**
+     * UserRole
+     * @enum {string}
+     */
+    UserRole: "admin" | "doctor" | "astronaut" | "jury";
     /** ValidationError */
     ValidationError: {
       /** Context */
@@ -1083,6 +1225,77 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  login_api_v1_auth_login_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["LoginRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["User"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  logout_api_v1_auth_logout_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  me_api_v1_auth_me_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["User"];
         };
       };
     };
@@ -1491,6 +1704,94 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["Session"][];
+        };
+      };
+    };
+  };
+  users_api_v1_users_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["User"][];
+        };
+      };
+    };
+  };
+  post_user_api_v1_users_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["NewUser"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["User"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  patch_user_api_v1_users__user_id__patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        user_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UserPatch"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["User"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
