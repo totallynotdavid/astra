@@ -9,8 +9,10 @@ const T0 = Date.parse("2026-11-13T00:00:00Z");
 function reading(seq: number): Reading {
   return {
     schema_version: "1.0",
+    id: seq + 1,
     session_id: "fall",
     device_id: "astra-01",
+    crew_member_id: null,
     seq,
     uptime_ms: seq * 1000,
     received_at: new Date(T0 + seq * 1000).toISOString(),
@@ -31,8 +33,10 @@ function reading(seq: number): Reading {
 function insight(seq: number): Insight {
   return {
     schema_version: "1.0",
+    id: seq + 1,
     session_id: "fall",
     device_id: "astra-01",
+    crew_member_id: null,
     seq,
     created_at: new Date(T0 + seq * 1000).toISOString(),
     risk_level: seq === 2 ? "review" : "normal",

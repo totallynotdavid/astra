@@ -80,8 +80,10 @@ class Reading(Model):
     """A validated sample as the server stores and publishes it."""
 
     schema_version: SchemaVersion
+    id: int | None = None
     session_id: str
     device_id: DeviceId
+    crew_member_id: str | None = None
     seq: int
     uptime_ms: int
     received_at: AwareDatetime
@@ -117,8 +119,10 @@ class Insight(Model):
     diagnosis."""
 
     schema_version: SchemaVersion
+    id: int | None = None
     session_id: str
     device_id: DeviceId
+    crew_member_id: str | None = None
     seq: int
     created_at: AwareDatetime
     risk_level: RiskLevel
@@ -145,6 +149,7 @@ class Event(Model):
     id: int
     session_id: str | None
     device_id: DeviceId | None
+    crew_member_id: str | None = None
     created_at: AwareDatetime
     kind: EventKind
     severity: Severity
@@ -210,12 +215,254 @@ class ErrorMessage(Model):
     message: str
 
 
-SocketMessage = Annotated[
-    TelemetryMessage | InsightMessage | DeviceStatusMessage | ErrorMessage,
-    Field(discriminator="type"),
-]
-
-
 class ReplayRequest(Model):
     session_id: str
     speed: Annotated[float, Field(gt=0, le=20)] = 1.0
+
+
+class CrewRole(StrEnum):
+    COMMANDER = "commander"
+    DOCTOR = "doctor"
+    ENGINEER = "engineer"
+    SCIENTIST = "scientist"
+
+
+class PublicProfile(Model):
+    """Public reference data the NASA import fills in. Not health data."""
+
+    name: str
+    agency: str | None = None
+    photo_url: str | None = None
+    bio: str | None = None
+    source_url: str | None = None
+    imported_at: AwareDatetime
+
+
+class CrewMember(Model):
+    id: str
+    code: str
+    display_name: str
+    crew_role: CrewRole
+    public_profile: PublicProfile | None = None
+
+
+class MissionStatus(StrEnum):
+    ACTIVE = "active"
+    ENDED = "ended"
+
+
+class Mission(Model):
+    id: str
+    name: str
+    status: MissionStatus
+    started_at: AwareDatetime
+    ended_at: AwareDatetime | None
+    crew: list[CrewMember]
+
+
+class ModelRunStatus(StrEnum):
+    COMPLETED = "completed"
+    FAILED = "failed"
+    UNAVAILABLE = "unavailable"
+
+
+class Modality(StrEnum):
+    WEARABLE = "wearable"
+    VIDEO = "video"
+    AUDIO = "audio"
+
+
+class FindingKind(StrEnum):
+    ACTIVITY = "activity"
+    INTERACTION = "interaction"
+    SPEECH = "speech"
+    VITALS = "vitals"
+
+
+class FindingLabel(StrEnum):
+    POSSIBLE_FALL = "possible_fall"
+    ABRUPT_MOVEMENT = "abrupt_movement"
+    PROLONGED_INACTIVITY = "prolonged_inactivity"
+    ISOLATION = "isolation"
+    INTERACTION = "interaction"
+    EXPLICIT_DISTRESS_PHRASE = "explicit_distress_phrase"
+    LONG_SILENCE = "long_silence"
+    FREQUENT_INTERRUPTIONS = "frequent_interruptions"
+    BASELINE_PENDING = "BASELINE_PENDING"
+    HR_ABOVE_PERSONAL_BASELINE = "HR_ABOVE_PERSONAL_BASELINE"
+    HR_OUT_OF_RANGE = "HR_OUT_OF_RANGE"
+    CONTACT_TEMPERATURE_OUT_OF_RANGE = "CONTACT_TEMPERATURE_OUT_OF_RANGE"
+    FALL_PATTERN = "FALL_PATTERN"
+    PPG_CONTACT_LOST = "PPG_CONTACT_LOST"
+
+
+class Evidence(Model):
+    description: str
+    media_ref: str | None = None
+
+
+class ReviewStatus(StrEnum):
+    PENDING = "pending"
+    CONFIRMED = "confirmed"
+    DISMISSED = "dismissed"
+
+
+class NewFinding(Model):
+    """One finding an external model reports inside a run."""
+
+    crew_member_id: str | None = None
+    kind: FindingKind
+    label: FindingLabel
+    confidence: Annotated[float, Field(ge=0, le=1)]
+    start_s: Annotated[float, Field(ge=0)]
+    end_s: Annotated[float, Field(ge=0)]
+    evidence: Evidence
+
+
+class Finding(NewFinding):
+    id: int
+    review_status: ReviewStatus
+
+
+class NewModelRun(Model):
+    """What a model posts: one execution and the findings it produced."""
+
+    model_name: str
+    model_version: str
+    status: ModelRunStatus
+    source: Source
+    modality: Modality
+    crew_member_id: str | None = None
+    started_at: AwareDatetime
+    completed_at: AwareDatetime | None = None
+    findings: list[NewFinding] = []
+
+
+class ModelRun(Model):
+    id: int
+    model_name: str
+    model_version: str
+    status: ModelRunStatus
+    source: Source
+    modality: Modality
+    crew_member_id: str | None
+    started_at: AwareDatetime
+    completed_at: AwareDatetime | None
+    findings: list[Finding]
+
+
+class FindingPatch(Model):
+    review_status: ReviewStatus | None = None
+    crew_member_id: str | None = None
+
+
+class AlertPriority(StrEnum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+
+
+class AlertStatus(StrEnum):
+    OPEN = "open"
+    ACKNOWLEDGED = "acknowledged"
+    RESOLVED = "resolved"
+
+
+class Alert(Model):
+    id: int
+    crew_member_id: str | None
+    priority: AlertPriority
+    status: AlertStatus
+    reason: str
+    created_at: AwareDatetime
+    reading_ids: list[int]
+    insight_ids: list[int]
+    finding_ids: list[int]
+
+
+class AlertReview(Model):
+    id: int
+    alert_id: int
+    created_at: AwareDatetime
+    status: AlertStatus
+    comment: str
+    action: str | None
+    actor: str
+
+
+class AlertReviewRequest(Model):
+    status: AlertStatus
+    comment: str = ""
+    action: str | None = None
+    actor: str
+
+
+class SignalOrigin(StrEnum):
+    INSIGHT = "insight"
+    FINDING = "finding"
+
+
+class SignalQuality(Model):
+    source: Source | None = None
+    missing: list[MeasurementName] = []
+    ppg_contact: PpgContact | None = None
+    motion_artifact: bool | None = None
+
+
+class AssessmentSignal(Model):
+    """One flagged pattern with what contributed to it and its data quality."""
+
+    origin: SignalOrigin
+    id: int | None
+    at: AwareDatetime
+    labels: list[str]
+    variables: list[str]
+    confidence: float | None = None
+    evidence: Evidence | None = None
+    review_status: ReviewStatus | None = None
+    quality: SignalQuality
+
+
+class HeartRateTrend(Model):
+    samples: int
+    valid_samples: int
+    missing_samples: int
+    baseline_bpm: float | None
+    mean_bpm: float | None
+    latest_bpm: float | None
+    delta_bpm: float | None
+
+
+class AssessmentFinding(Model):
+    modality: Modality
+    model_name: str
+    finding: Finding
+
+
+class CrewAssessment(Model):
+    """What the doctor sees for one crew member and period. It aggregates; it
+    decides nothing new."""
+
+    crew_member: CrewMember
+    start: AwareDatetime
+    end: AwareDatetime
+    heart_rate: HeartRateTrend
+    latest_insight: Insight | None
+    findings: list[AssessmentFinding]
+    alerts: list[Alert]
+    signals: list[AssessmentSignal]
+
+
+class ModelRunMessage(Model):
+    type: Literal["model_run"]
+    model_run: ModelRun
+
+
+SocketMessage = Annotated[
+    TelemetryMessage
+    | InsightMessage
+    | DeviceStatusMessage
+    | ErrorMessage
+    | ModelRunMessage,
+    Field(discriminator="type"),
+]

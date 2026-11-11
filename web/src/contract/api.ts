@@ -4,6 +4,75 @@
  */
 
 export interface paths {
+  "/api/v1/alerts": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Alerts */
+    get: operations["alerts_api_v1_alerts_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/alerts/{alert_id}/reviews": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Reviews */
+    get: operations["reviews_api_v1_alerts__alert_id__reviews_get"];
+    put?: never;
+    /** Post Review */
+    post: operations["post_review_api_v1_alerts__alert_id__reviews_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/crew": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Crew */
+    get: operations["crew_api_v1_crew_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/crew/{crew_member_id}/assessment": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Assessment */
+    get: operations["assessment_api_v1_crew__crew_member_id__assessment_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/demo/replay": {
     parameters: {
       query?: never;
@@ -53,6 +122,23 @@ export interface paths {
     options?: never;
     head?: never;
     patch?: never;
+    trace?: never;
+  };
+  "/api/v1/findings/{finding_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** Patch Finding */
+    patch: operations["patch_finding_api_v1_findings__finding_id__patch"];
     trace?: never;
   };
   "/api/v1/insights/latest": {
@@ -106,6 +192,41 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/missions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Missions */
+    get: operations["missions_api_v1_missions_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/model-runs": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Model Runs */
+    get: operations["model_runs_api_v1_model_runs_get"];
+    put?: never;
+    /** Post Model Run */
+    post: operations["post_model_run_api_v1_model_runs_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/sessions": {
     parameters: {
       query?: never;
@@ -144,6 +265,142 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
+    /** Alert */
+    Alert: {
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /** Crew Member Id */
+      crew_member_id: string | null;
+      /** Finding Ids */
+      finding_ids: number[];
+      /** Id */
+      id: number;
+      /** Insight Ids */
+      insight_ids: number[];
+      priority: components["schemas"]["AlertPriority"];
+      /** Reading Ids */
+      reading_ids: number[];
+      /** Reason */
+      reason: string;
+      status: components["schemas"]["AlertStatus"];
+    };
+    /**
+     * AlertPriority
+     * @enum {string}
+     */
+    AlertPriority: "low" | "medium" | "high";
+    /** AlertReview */
+    AlertReview: {
+      /** Action */
+      action: string | null;
+      /** Actor */
+      actor: string;
+      /** Alert Id */
+      alert_id: number;
+      /** Comment */
+      comment: string;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /** Id */
+      id: number;
+      status: components["schemas"]["AlertStatus"];
+    };
+    /** AlertReviewRequest */
+    AlertReviewRequest: {
+      /** Action */
+      action?: string | null;
+      /** Actor */
+      actor: string;
+      /**
+       * Comment
+       * @default
+       */
+      comment: string;
+      status: components["schemas"]["AlertStatus"];
+    };
+    /**
+     * AlertStatus
+     * @enum {string}
+     */
+    AlertStatus: "open" | "acknowledged" | "resolved";
+    /** AssessmentFinding */
+    AssessmentFinding: {
+      finding: components["schemas"]["Finding"];
+      modality: components["schemas"]["Modality"];
+      /** Model Name */
+      model_name: string;
+    };
+    /**
+     * AssessmentSignal
+     * @description One flagged pattern with what contributed to it and its data quality.
+     */
+    AssessmentSignal: {
+      /**
+       * At
+       * Format: date-time
+       */
+      at: string;
+      /** Confidence */
+      confidence?: number | null;
+      evidence?: components["schemas"]["Evidence"] | null;
+      /** Id */
+      id: number | null;
+      /** Labels */
+      labels: string[];
+      origin: components["schemas"]["SignalOrigin"];
+      quality: components["schemas"]["SignalQuality"];
+      review_status?: components["schemas"]["ReviewStatus"] | null;
+      /** Variables */
+      variables: string[];
+    };
+    /**
+     * CrewAssessment
+     * @description What the doctor sees for one crew member and period. It aggregates; it
+     *     decides nothing new.
+     */
+    CrewAssessment: {
+      /** Alerts */
+      alerts: components["schemas"]["Alert"][];
+      crew_member: components["schemas"]["CrewMember"];
+      /**
+       * End
+       * Format: date-time
+       */
+      end: string;
+      /** Findings */
+      findings: components["schemas"]["AssessmentFinding"][];
+      heart_rate: components["schemas"]["HeartRateTrend"];
+      latest_insight: components["schemas"]["Insight"] | null;
+      /** Signals */
+      signals: components["schemas"]["AssessmentSignal"][];
+      /**
+       * Start
+       * Format: date-time
+       */
+      start: string;
+    };
+    /** CrewMember */
+    CrewMember: {
+      /** Code */
+      code: string;
+      crew_role: components["schemas"]["CrewRole"];
+      /** Display Name */
+      display_name: string;
+      /** Id */
+      id: string;
+      public_profile?: components["schemas"]["PublicProfile"] | null;
+    };
+    /**
+     * CrewRole
+     * @enum {string}
+     */
+    CrewRole: "commander" | "doctor" | "engineer" | "scientist";
     /**
      * DeviceSample
      * @description One JSON line the firmware prints over serial.
@@ -210,6 +467,8 @@ export interface components {
        * Format: date-time
        */
       created_at: string;
+      /** Crew Member Id */
+      crew_member_id?: string | null;
       /** Device Id */
       device_id: string | null;
       /** Id */
@@ -226,6 +485,66 @@ export interface components {
      * @enum {string}
      */
     EventKind: "alert" | "device_status" | "ingest_error";
+    /** Evidence */
+    Evidence: {
+      /** Description */
+      description: string;
+      /**
+       * Media Ref
+       * @default null
+       */
+      media_ref: string | null;
+    };
+    /** Finding */
+    Finding: {
+      /** Confidence */
+      confidence: number;
+      /**
+       * Crew Member Id
+       * @default null
+       */
+      crew_member_id: string | null;
+      /** End S */
+      end_s: number;
+      evidence: components["schemas"]["Evidence"];
+      /** Id */
+      id: number;
+      kind: components["schemas"]["FindingKind"];
+      label: components["schemas"]["FindingLabel"];
+      review_status: components["schemas"]["ReviewStatus"];
+      /** Start S */
+      start_s: number;
+    };
+    /**
+     * FindingKind
+     * @enum {string}
+     */
+    FindingKind: "activity" | "interaction" | "speech" | "vitals";
+    /**
+     * FindingLabel
+     * @enum {string}
+     */
+    FindingLabel:
+      | "possible_fall"
+      | "abrupt_movement"
+      | "prolonged_inactivity"
+      | "isolation"
+      | "interaction"
+      | "explicit_distress_phrase"
+      | "long_silence"
+      | "frequent_interruptions"
+      | "BASELINE_PENDING"
+      | "HR_ABOVE_PERSONAL_BASELINE"
+      | "HR_OUT_OF_RANGE"
+      | "CONTACT_TEMPERATURE_OUT_OF_RANGE"
+      | "FALL_PATTERN"
+      | "PPG_CONTACT_LOST";
+    /** FindingPatch */
+    FindingPatch: {
+      /** Crew Member Id */
+      crew_member_id?: string | null;
+      review_status?: components["schemas"]["ReviewStatus"] | null;
+    };
     /** HTTPValidationError */
     HTTPValidationError: {
       /** Detail */
@@ -242,6 +561,23 @@ export interface components {
       serial: components["schemas"]["LinkStatus"];
       storage: components["schemas"]["StorageStatus"];
     };
+    /** HeartRateTrend */
+    HeartRateTrend: {
+      /** Baseline Bpm */
+      baseline_bpm: number | null;
+      /** Delta Bpm */
+      delta_bpm: number | null;
+      /** Latest Bpm */
+      latest_bpm: number | null;
+      /** Mean Bpm */
+      mean_bpm: number | null;
+      /** Missing Samples */
+      missing_samples: number;
+      /** Samples */
+      samples: number;
+      /** Valid Samples */
+      valid_samples: number;
+    };
     /**
      * Insight
      * @description The analysis of one reading. It flags a pattern for review; it is not a
@@ -253,8 +589,18 @@ export interface components {
        * Format: date-time
        */
       created_at: string;
+      /**
+       * Crew Member Id
+       * @default null
+       */
+      crew_member_id: string | null;
       /** Device Id */
       device_id: string;
+      /**
+       * Id
+       * @default null
+       */
+      id: number | null;
       /** Limitations */
       limitations: string[];
       method: components["schemas"]["Method"];
@@ -315,16 +661,145 @@ export interface components {
      * @enum {string}
      */
     MissingReason: "no_contact" | "warming_up" | "sensor_error" | "not_present";
+    /** Mission */
+    Mission: {
+      /** Crew */
+      crew: components["schemas"]["CrewMember"][];
+      /** Ended At */
+      ended_at: string | null;
+      /** Id */
+      id: string;
+      /** Name */
+      name: string;
+      /**
+       * Started At
+       * Format: date-time
+       */
+      started_at: string;
+      status: components["schemas"]["MissionStatus"];
+    };
+    /**
+     * MissionStatus
+     * @enum {string}
+     */
+    MissionStatus: "active" | "ended";
+    /**
+     * Modality
+     * @enum {string}
+     */
+    Modality: "wearable" | "video" | "audio";
+    /** ModelRun */
+    ModelRun: {
+      /** Completed At */
+      completed_at: string | null;
+      /** Crew Member Id */
+      crew_member_id: string | null;
+      /** Findings */
+      findings: components["schemas"]["Finding"][];
+      /** Id */
+      id: number;
+      modality: components["schemas"]["Modality"];
+      /** Model Name */
+      model_name: string;
+      /** Model Version */
+      model_version: string;
+      source: components["schemas"]["Source"];
+      /**
+       * Started At
+       * Format: date-time
+       */
+      started_at: string;
+      status: components["schemas"]["ModelRunStatus"];
+    };
+    /** ModelRunMessage */
+    ModelRunMessage: {
+      model_run: components["schemas"]["ModelRun"];
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "model_run";
+    };
+    /**
+     * ModelRunStatus
+     * @enum {string}
+     */
+    ModelRunStatus: "completed" | "failed" | "unavailable";
     /**
      * ModelStatus
      * @enum {string}
      */
     ModelStatus: "ready" | "unavailable";
     /**
+     * NewFinding
+     * @description One finding an external model reports inside a run.
+     */
+    NewFinding: {
+      /** Confidence */
+      confidence: number;
+      /** Crew Member Id */
+      crew_member_id?: string | null;
+      /** End S */
+      end_s: number;
+      evidence: components["schemas"]["Evidence"];
+      kind: components["schemas"]["FindingKind"];
+      label: components["schemas"]["FindingLabel"];
+      /** Start S */
+      start_s: number;
+    };
+    /**
+     * NewModelRun
+     * @description What a model posts: one execution and the findings it produced.
+     */
+    NewModelRun: {
+      /** Completed At */
+      completed_at?: string | null;
+      /** Crew Member Id */
+      crew_member_id?: string | null;
+      /**
+       * Findings
+       * @default []
+       */
+      findings: components["schemas"]["NewFinding"][];
+      modality: components["schemas"]["Modality"];
+      /** Model Name */
+      model_name: string;
+      /** Model Version */
+      model_version: string;
+      source: components["schemas"]["Source"];
+      /**
+       * Started At
+       * Format: date-time
+       */
+      started_at: string;
+      status: components["schemas"]["ModelRunStatus"];
+    };
+    /**
      * PpgContact
      * @enum {string}
      */
     PpgContact: "ok" | "lost" | "unknown";
+    /**
+     * PublicProfile
+     * @description Public reference data the NASA import fills in. Not health data.
+     */
+    PublicProfile: {
+      /** Agency */
+      agency?: string | null;
+      /** Bio */
+      bio?: string | null;
+      /**
+       * Imported At
+       * Format: date-time
+       */
+      imported_at: string;
+      /** Name */
+      name: string;
+      /** Photo Url */
+      photo_url?: string | null;
+      /** Source Url */
+      source_url?: string | null;
+    };
     /** Quality */
     Quality: {
       /** Motion Artifact */
@@ -336,8 +811,18 @@ export interface components {
      * @description A validated sample as the server stores and publishes it.
      */
     Reading: {
+      /**
+       * Crew Member Id
+       * @default null
+       */
+      crew_member_id: string | null;
       /** Device Id */
       device_id: string;
+      /**
+       * Id
+       * @default null
+       */
+      id: number | null;
       measurements: components["schemas"]["Measurements"];
       /** Missing */
       missing: {
@@ -386,6 +871,11 @@ export interface components {
       speed: number;
     };
     /**
+     * ReviewStatus
+     * @enum {string}
+     */
+    ReviewStatus: "pending" | "confirmed" | "dismissed";
+    /**
      * RiskLevel
      * @enum {string}
      */
@@ -410,11 +900,35 @@ export interface components {
      * @enum {string}
      */
     Severity: "info" | "review" | "critical";
+    /**
+     * SignalOrigin
+     * @enum {string}
+     */
+    SignalOrigin: "insight" | "finding";
+    /** SignalQuality */
+    SignalQuality: {
+      /**
+       * Missing
+       * @default []
+       */
+      missing: (
+        | "heart_rate_bpm"
+        | "contact_temperature_c"
+        | "accel_min_m_s2"
+        | "accel_max_m_s2"
+        | "accel_mean_m_s2"
+      )[];
+      /** Motion Artifact */
+      motion_artifact?: boolean | null;
+      ppg_contact?: components["schemas"]["PpgContact"] | null;
+      source?: components["schemas"]["Source"] | null;
+    };
     SocketMessage:
       | components["schemas"]["TelemetryMessage"]
       | components["schemas"]["InsightMessage"]
       | components["schemas"]["DeviceStatusMessage"]
-      | components["schemas"]["ErrorMessage"];
+      | components["schemas"]["ErrorMessage"]
+      | components["schemas"]["ModelRunMessage"];
     /**
      * Source
      * @enum {string}
@@ -456,6 +970,158 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+  alerts_api_v1_alerts_get: {
+    parameters: {
+      query?: {
+        status?: components["schemas"]["AlertStatus"] | null;
+        crew_member_id?: string | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Alert"][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  reviews_api_v1_alerts__alert_id__reviews_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        alert_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AlertReview"][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  post_review_api_v1_alerts__alert_id__reviews_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        alert_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AlertReviewRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AlertReview"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  crew_api_v1_crew_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CrewMember"][];
+        };
+      };
+    };
+  };
+  assessment_api_v1_crew__crew_member_id__assessment_get: {
+    parameters: {
+      query?: {
+        start?: string | null;
+        end?: string | null;
+      };
+      header?: never;
+      path: {
+        crew_member_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CrewAssessment"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
   start_replay_api_v1_demo_replay_post: {
     parameters: {
       query?: never;
@@ -528,6 +1194,41 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["Event"][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  patch_finding_api_v1_findings__finding_id__patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        finding_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["FindingPatch"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Finding"];
         };
       };
       /** @description Validation Error */
@@ -624,6 +1325,93 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["Reading"] | null;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  missions_api_v1_missions_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Mission"][];
+        };
+      };
+    };
+  };
+  model_runs_api_v1_model_runs_get: {
+    parameters: {
+      query?: {
+        crew_member_id?: string | null;
+        modality?: components["schemas"]["Modality"] | null;
+        start?: string | null;
+        end?: string | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ModelRun"][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  post_model_run_api_v1_model_runs_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["NewModelRun"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ModelRun"];
         };
       };
       /** @description Validation Error */

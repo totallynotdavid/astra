@@ -80,8 +80,10 @@ function makeReading(
   const mean = +(9.7 + Math.sin(seq / 40) * 0.4 + rand() * 0.3).toFixed(2);
   return {
     schema_version: SCHEMA_VERSION,
+    id: seq + 1,
     session_id: session,
     device_id: DEVICE,
+    crew_member_id: null,
     seq,
     uptime_ms: seq * 1000,
     received_at: new Date(tMs).toISOString(),
@@ -111,8 +113,10 @@ function makeInsight(
 ): Insight {
   return {
     schema_version: SCHEMA_VERSION,
+    id: seq + 1,
     session_id: session,
     device_id: DEVICE,
+    crew_member_id: null,
     seq,
     created_at: new Date(tMs).toISOString(),
     risk_level: modelReady ? profile.risk : "unavailable",
