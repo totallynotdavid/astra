@@ -1,13 +1,14 @@
 # The server
 
 [`server/src/astra/app.py`](../server/src/astra/app.py) builds the service.
-`create_app` reads three environment variables:
+`create_app` reads four environment variables:
 
-| Variable            | Default         | Meaning                                                                                                                                                                                           |
-| ------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ASTRA_SERIAL_PORT` | unset           | The serial port to ingest: a device path such as `/dev/ttyUSB0`, or the pseudo-terminal path the simulator prints. Unset means the server runs without ingest and reports `serial: disconnected`. |
-| `ASTRA_DB`          | `astra.sqlite3` | The SQLite file. `*.sqlite3` is git-ignored.                                                                                                                                                      |
-| `ASTRA_WEB_DIST`    | unset           | A built `web/dist` to serve at `/`. Paths the app owns fall back to `index.html`. `mise run demo` sets it.                                                                                        |
+| Variable              | Default                | Meaning                                                                                                                                                                                           |
+| --------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ASTRA_SERIAL_PORT`   | unset                  | The serial port to ingest: a device path such as `/dev/ttyUSB0`, or the pseudo-terminal path the simulator prints. Unset means the server runs without ingest and reports `serial: disconnected`. |
+| `ASTRA_DB`            | `astra.sqlite3`        | The SQLite file. `*.sqlite3` is git-ignored.                                                                                                                                                      |
+| `ASTRA_WEB_DIST`      | unset                  | A built `web/dist` to serve at `/`. Paths the app owns fall back to `index.html`. `mise run demo` sets it.                                                                                        |
+| `ASTRA_NASA_SNAPSHOT` | `server/fixtures/nasa` | The directory the seed loads the [NASA reference data](nasa.md) from.                                                                                                                             |
 
 Run it:
 
@@ -33,6 +34,8 @@ ASTRA_SERIAL_PORT=/dev/ttyUSB0 mise run demo
 | `insights`           | The analysis of one reading.                                                                        |
 | `events`             | `ingest_error`, `device_status` and `alert` records.                                                |
 | `crew_members`       | One crew member, with the optional `public_profile` as JSON.                                        |
+| `crew_photos`        | The photo of a crew member's `public_profile`.                                                      |
+| `nasa_imports`       | One run of the NASA import: request URL, mode, time, HTTP status, response size and result.         |
 | `missions`           | One mission; `mission_members` links its crew.                                                      |
 | `device_assignments` | One period a device is assigned to a crew member (`assigned_at` to `released_at`).                  |
 | `model_runs`         | One model execution: name, version, status, input `source`, `modality` and times.                   |

@@ -73,6 +73,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/crew/{crew_member_id}/photo": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Crew Photo */
+    get: operations["crew_photo_api_v1_crew__crew_member_id__photo_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/demo/replay": {
     parameters: {
       query?: never;
@@ -788,6 +805,8 @@ export interface components {
       agency?: string | null;
       /** Bio */
       bio?: string | null;
+      /** Credit */
+      credit?: string | null;
       /**
        * Imported At
        * Format: date-time
@@ -1109,6 +1128,37 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["CrewAssessment"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  crew_photo_api_v1_crew__crew_member_id__photo_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        crew_member_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "image/*": unknown;
         };
       };
       /** @description Validation Error */

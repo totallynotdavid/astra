@@ -8,6 +8,7 @@ HTTP handlers, so every method takes the same lock.
 import json
 import sqlite3
 import threading
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from uuid import uuid4
 
@@ -183,9 +184,25 @@ CREATE TABLE IF NOT EXISTS alert_reviews (
     action TEXT,
     actor TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS crew_photos (
+    crew_member_id TEXT PRIMARY KEY,
+    content_type TEXT NOT NULL,
+    data BLOB NOT NULL
+);
+CREATE TABLE IF NOT EXISTS nasa_imports (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    crew_member_id TEXT NOT NULL,
+    endpoint TEXT NOT NULL,
+    mode TEXT NOT NULL,
+    requested_at TEXT NOT NULL,
+    http_status INTEGER,
+    response_bytes INTEGER,
+    status TEXT NOT NULL,
+    detail TEXT
+);
 """
 
-_DB_SCHEMA_VERSION = "2"
+_DB_SCHEMA_VERSION = "3"
 
 _MEASUREMENT_COLUMNS = (
     "heart_rate_bpm",
@@ -194,6 +211,20 @@ _MEASUREMENT_COLUMNS = (
     "accel_max_m_s2",
     "accel_mean_m_s2",
 )
+
+
+@dataclass(frozen=True)
+class NasaImport:
+    """One run of the NASA import: the request it made and how it ended."""
+
+    crew_member_id: str
+    endpoint: str
+    mode: str
+    requested_at: datetime
+    http_status: int | None
+    response_bytes: int | None
+    status: str
+    detail: str | None = None
 
 
 def _stamp(at: datetime) -> str:
@@ -631,6 +662,72 @@ class Store:
                 "SELECT * FROM crew_members WHERE id = ?", (crew_member_id,)
             ).fetchone()
         return self._to_member(row) if row else None
+
+    def set_public_profile(
+        self,
+        crew_member_id: str,
+        profile: PublicProfile,
+        photo: tuple[str, bytes] | None,
+    ) -> None:
+        with self._lock, self._db:
+            self._db.execute(
+                "UPDATE crew_members SET public_profile = ? WHERE id = ?",
+                (profile.model_dump_json(), crew_member_id),
+            )
+            if photo is None:
+                self._db.execute(
+                    "DELETE FROM crew_photos WHERE crew_member_id = ?",
+                    (crew_member_id,),
+                )
+            else:
+                self._db.execute(
+                    "INSERT OR REPLACE INTO crew_photos"
+                    " (crew_member_id, content_type, data) VALUES (?, ?, ?)",
+                    (crew_member_id, *photo),
+                )
+
+    def crew_photo(self, crew_member_id: str) -> tuple[str, bytes] | None:
+        with self._lock:
+            row = self._db.execute(
+                "SELECT content_type, data FROM crew_photos WHERE crew_member_id = ?",
+                (crew_member_id,),
+            ).fetchone()
+        return (row["content_type"], bytes(row["data"])) if row else None
+
+    def insert_nasa_import(self, record: NasaImport) -> None:
+        with self._lock, self._db:
+            self._db.execute(
+                "INSERT INTO nasa_imports (crew_member_id, endpoint, mode,"
+                " requested_at, http_status, response_bytes, status, detail)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    record.crew_member_id,
+                    record.endpoint,
+                    record.mode,
+                    _stamp(record.requested_at),
+                    record.http_status,
+                    record.response_bytes,
+                    record.status,
+                    record.detail,
+                ),
+            )
+
+    def nasa_imports(self) -> list[NasaImport]:
+        with self._lock:
+            rows = self._db.execute("SELECT * FROM nasa_imports ORDER BY id").fetchall()
+        return [
+            NasaImport(
+                crew_member_id=row["crew_member_id"],
+                endpoint=row["endpoint"],
+                mode=row["mode"],
+                requested_at=_parse(row["requested_at"]),
+                http_status=row["http_status"],
+                response_bytes=row["response_bytes"],
+                status=row["status"],
+                detail=row["detail"],
+            )
+            for row in rows
+        ]
 
     @staticmethod
     def _to_member(row: sqlite3.Row) -> CrewMember:

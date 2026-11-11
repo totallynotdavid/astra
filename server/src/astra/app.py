@@ -104,6 +104,18 @@ def api_router(pipeline: Pipeline) -> APIRouter:
     def crew() -> list[CrewMember]:
         return store.crew_members()
 
+    @router.get(
+        "/crew/{crew_member_id}/photo",
+        response_class=Response,
+        responses={200: {"content": {"image/*": {}}}},
+    )
+    def crew_photo(crew_member_id: str) -> Response:
+        photo = store.crew_photo(crew_member_id)
+        if photo is None:
+            raise HTTPException(status_code=404, detail="photo not found")
+        content_type, data = photo
+        return Response(data, media_type=content_type)
+
     @router.get("/missions")
     def missions() -> list[Mission]:
         return store.missions()

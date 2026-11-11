@@ -234,6 +234,7 @@ class PublicProfile(Model):
     agency: str | None = None
     photo_url: str | None = None
     bio: str | None = None
+    credit: str | None = None
     source_url: str | None = None
     imported_at: AwareDatetime
 

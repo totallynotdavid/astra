@@ -67,7 +67,9 @@ pipeline at `speed` times real time with `source: REPLAY`.
 
 [`seed.py`](../server/src/astra/seed.py) loads mission AZRIEL-1 on an empty
 database: four crew members, one of them the doctor, and `astra-01` to
-`astra-04` assigned to them in order. It runs from `create_app` and is
+`astra-04` assigned to them in order. It then gives each a NASA reference
+profile from the snapshot ([`nasa.py`](../server/src/astra/nasa.py), described
+in [NASA reference data](nasa.md)). It runs from `create_app` and is
 idempotent.
 
 External models post one `ModelRun` with their findings to
