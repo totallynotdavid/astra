@@ -3,18 +3,10 @@ import { useState, type FormEvent } from "react";
 import type { components } from "../contract/api";
 import type { CrewStore } from "../data/crew";
 import { useCrew } from "../data/crew";
-import type { CrewApi, FindingRef } from "../data/source";
-import {
-  alertPriorityText,
-  alertReasonText,
-  alertStatusText,
-  crewRoleText,
-  findingKindText,
-  findingLabelText,
-  modalityText,
-  reviewStatusText,
-} from "../lib/copy";
+import type { CrewApi } from "../data/source";
+import { alertPriorityText, alertReasonText, alertStatusText, crewRoleText } from "../lib/copy";
 import { formatDateTime } from "../lib/format";
+import { FindingRow } from "./FindingRow";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
@@ -25,92 +17,11 @@ type CrewMember = components["schemas"]["CrewMember"];
 
 const priorityVariant = { high: "critical", medium: "review", low: "neutral" } as const;
 const statusVariant = { open: "critical", acknowledged: "review", resolved: "success" } as const;
-const reviewVariant = { pending: "review", confirmed: "success", dismissed: "neutral" } as const;
 
 const selectClass =
   "h-11 w-full rounded-sm border border-border-strong bg-raised px-3 text-base text-text";
 const inputClass =
   "h-11 w-full rounded-sm border border-border-strong bg-raised px-3 text-base text-text";
-
-function FindingRow({
-  refData,
-  members,
-  onPatch,
-}: {
-  refData: FindingRef;
-  members: CrewMember[];
-  onPatch: ((patch: components["schemas"]["FindingPatch"]) => void) | null;
-}) {
-  const { finding, modality } = refData;
-  const [busy, setBusy] = useState(false);
-  async function run(patch: components["schemas"]["FindingPatch"]) {
-    setBusy(true);
-    try {
-      await onPatch?.(patch);
-    } finally {
-      setBusy(false);
-    }
-  }
-  return (
-    <li className="border-t border-border/50 py-2">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm text-text">{findingLabelText[finding.label]}</span>
-        <Badge variant="neutral">{findingKindText[finding.kind]}</Badge>
-        <Badge variant="neutral">{modalityText[modality]}</Badge>
-        <span className="text-xs text-muted tabular-nums">
-          confianza {Math.round(finding.confidence * 100)}%
-        </span>
-        <Badge variant={reviewVariant[finding.review_status]}>
-          {reviewStatusText[finding.review_status]}
-        </Badge>
-      </div>
-      <p className="mt-1 text-xs text-muted">{finding.evidence.description}</p>
-      {onPatch && (
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          {finding.review_status !== "confirmed" && (
-            <Button
-              variant="outline"
-              className="h-8 px-3 text-sm"
-              disabled={busy}
-              onClick={() => void run({ review_status: "confirmed" })}
-            >
-              Confirmar
-            </Button>
-          )}
-          {finding.review_status !== "dismissed" && (
-            <Button
-              variant="outline"
-              className="h-8 px-3 text-sm"
-              disabled={busy}
-              onClick={() => void run({ review_status: "dismissed" })}
-            >
-              Descartar
-            </Button>
-          )}
-          {modality === "audio" && (
-            <label className="flex items-center gap-2 text-xs text-muted">
-              Reasignar a
-              <select
-                aria-label="Reasignar hallazgo a otra persona"
-                className="h-8 rounded-sm border border-border-strong bg-raised px-2 text-sm text-text"
-                value={finding.crew_member_id ?? ""}
-                disabled={busy}
-                onChange={(e) => void run({ crew_member_id: e.target.value || null })}
-              >
-                <option value="">Sin asignar</option>
-                {members.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.code} · {m.display_name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-        </div>
-      )}
-    </li>
-  );
-}
 
 export function AlertCard({
   alert,
