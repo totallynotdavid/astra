@@ -23,16 +23,23 @@ ASTRA_SERIAL_PORT=/dev/ttyUSB0 mise run demo
 
 ## Storage
 
-[`store.py`](../server/src/astra/store.py) keeps five tables in the SQLite
-file:
+[`store.py`](../server/src/astra/store.py) keeps the SQLite tables:
 
-| Table      | One row per                                                                                         |
-| ---------- | --------------------------------------------------------------------------------------------------- |
-| `devices`  | Known `device_id` with `last_seen_at`.                                                              |
-| `sessions` | One boot of a device, or one replay: `source`, `label`, `started_at`, `ended_at`.                   |
-| `readings` | An accepted line. Each measurement is a column, so queries can filter on it; a missing one is NULL. |
-| `insights` | The analysis of one reading.                                                                        |
-| `events`   | `ingest_error`, `device_status` and `alert` records.                                                |
+| Table                | One row per                                                                                         |
+| -------------------- | --------------------------------------------------------------------------------------------------- |
+| `devices`            | Known `device_id` with `last_seen_at`.                                                              |
+| `sessions`           | One boot of a device, or one replay: `source`, `label`, `started_at`, `ended_at`.                   |
+| `readings`           | An accepted line. Each measurement is a column, so queries can filter on it; a missing one is NULL. |
+| `insights`           | The analysis of one reading.                                                                        |
+| `events`             | `ingest_error`, `device_status` and `alert` records.                                                |
+| `crew_members`       | One crew member, with the optional `public_profile` as JSON.                                        |
+| `missions`           | One mission; `mission_members` links its crew.                                                      |
+| `device_assignments` | One period a device is assigned to a crew member (`assigned_at` to `released_at`).                  |
+| `model_runs`         | One model execution: name, version, status, input `source`, `modality` and times.                   |
+| `findings`           | One finding of a run, with label, confidence, window, evidence and review status.                   |
+| `alerts`             | One alert for a crew member, with `priority`, `status` and `reason`.                                |
+| `alert_links`        | The ids of the readings, insights or findings behind an alert.                                      |
+| `alert_reviews`      | One review of an alert: status, comment, optional action and actor. Never edited.                   |
 
 Times are stored as ISO 8601 UTC strings. `/health` reports `storage: ok`
 only while a probe write succeeds.

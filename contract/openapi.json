@@ -1,6 +1,396 @@
 {
   "components": {
     "schemas": {
+      "Alert": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "crew_member_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Crew Member Id"
+          },
+          "finding_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Finding Ids",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "insight_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Insight Ids",
+            "type": "array"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/AlertPriority"
+          },
+          "reading_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Reading Ids",
+            "type": "array"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AlertStatus"
+          }
+        },
+        "required": [
+          "id",
+          "crew_member_id",
+          "priority",
+          "status",
+          "reason",
+          "created_at",
+          "reading_ids",
+          "insight_ids",
+          "finding_ids"
+        ],
+        "title": "Alert",
+        "type": "object"
+      },
+      "AlertPriority": {
+        "enum": [
+          "low",
+          "medium",
+          "high"
+        ],
+        "title": "AlertPriority",
+        "type": "string"
+      },
+      "AlertReview": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Action"
+          },
+          "actor": {
+            "title": "Actor",
+            "type": "string"
+          },
+          "alert_id": {
+            "title": "Alert Id",
+            "type": "integer"
+          },
+          "comment": {
+            "title": "Comment",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AlertStatus"
+          }
+        },
+        "required": [
+          "id",
+          "alert_id",
+          "created_at",
+          "status",
+          "comment",
+          "action",
+          "actor"
+        ],
+        "title": "AlertReview",
+        "type": "object"
+      },
+      "AlertReviewRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Action"
+          },
+          "actor": {
+            "title": "Actor",
+            "type": "string"
+          },
+          "comment": {
+            "default": "",
+            "title": "Comment",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AlertStatus"
+          }
+        },
+        "required": [
+          "status",
+          "actor"
+        ],
+        "title": "AlertReviewRequest",
+        "type": "object"
+      },
+      "AlertStatus": {
+        "enum": [
+          "open",
+          "acknowledged",
+          "resolved"
+        ],
+        "title": "AlertStatus",
+        "type": "string"
+      },
+      "AssessmentFinding": {
+        "additionalProperties": false,
+        "properties": {
+          "finding": {
+            "$ref": "#/components/schemas/Finding"
+          },
+          "modality": {
+            "$ref": "#/components/schemas/Modality"
+          },
+          "model_name": {
+            "title": "Model Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "modality",
+          "model_name",
+          "finding"
+        ],
+        "title": "AssessmentFinding",
+        "type": "object"
+      },
+      "AssessmentSignal": {
+        "additionalProperties": false,
+        "description": "One flagged pattern with what contributed to it and its data quality.",
+        "properties": {
+          "at": {
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          },
+          "evidence": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Evidence"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "labels": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Labels",
+            "type": "array"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/SignalOrigin"
+          },
+          "quality": {
+            "$ref": "#/components/schemas/SignalQuality"
+          },
+          "review_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReviewStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "variables": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Variables",
+            "type": "array"
+          }
+        },
+        "required": [
+          "origin",
+          "id",
+          "at",
+          "labels",
+          "variables",
+          "quality"
+        ],
+        "title": "AssessmentSignal",
+        "type": "object"
+      },
+      "CrewAssessment": {
+        "additionalProperties": false,
+        "description": "What the doctor sees for one crew member and period. It aggregates; it\ndecides nothing new.",
+        "properties": {
+          "alerts": {
+            "items": {
+              "$ref": "#/components/schemas/Alert"
+            },
+            "title": "Alerts",
+            "type": "array"
+          },
+          "crew_member": {
+            "$ref": "#/components/schemas/CrewMember"
+          },
+          "end": {
+            "format": "date-time",
+            "title": "End",
+            "type": "string"
+          },
+          "findings": {
+            "items": {
+              "$ref": "#/components/schemas/AssessmentFinding"
+            },
+            "title": "Findings",
+            "type": "array"
+          },
+          "heart_rate": {
+            "$ref": "#/components/schemas/HeartRateTrend"
+          },
+          "latest_insight": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Insight"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "signals": {
+            "items": {
+              "$ref": "#/components/schemas/AssessmentSignal"
+            },
+            "title": "Signals",
+            "type": "array"
+          },
+          "start": {
+            "format": "date-time",
+            "title": "Start",
+            "type": "string"
+          }
+        },
+        "required": [
+          "crew_member",
+          "start",
+          "end",
+          "heart_rate",
+          "latest_insight",
+          "findings",
+          "alerts",
+          "signals"
+        ],
+        "title": "CrewAssessment",
+        "type": "object"
+      },
+      "CrewMember": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "crew_role": {
+            "$ref": "#/components/schemas/CrewRole"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "public_profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PublicProfile"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "display_name",
+          "crew_role"
+        ],
+        "title": "CrewMember",
+        "type": "object"
+      },
+      "CrewRole": {
+        "enum": [
+          "commander",
+          "doctor",
+          "engineer",
+          "scientist"
+        ],
+        "title": "CrewRole",
+        "type": "string"
+      },
       "DeviceSample": {
         "additionalProperties": false,
         "description": "One JSON line the firmware prints over serial.",
@@ -158,6 +548,17 @@
             "title": "Created At",
             "type": "string"
           },
+          "crew_member_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Crew Member Id"
+          },
           "device_id": {
             "anyOf": [
               {
@@ -220,6 +621,151 @@
         "title": "EventKind",
         "type": "string"
       },
+      "Evidence": {
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "media_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Media Ref"
+          }
+        },
+        "required": [
+          "description"
+        ],
+        "title": "Evidence",
+        "type": "object"
+      },
+      "Finding": {
+        "additionalProperties": false,
+        "properties": {
+          "confidence": {
+            "maximum": 1,
+            "minimum": 0,
+            "title": "Confidence",
+            "type": "number"
+          },
+          "crew_member_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Crew Member Id"
+          },
+          "end_s": {
+            "minimum": 0,
+            "title": "End S",
+            "type": "number"
+          },
+          "evidence": {
+            "$ref": "#/components/schemas/Evidence"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/FindingKind"
+          },
+          "label": {
+            "$ref": "#/components/schemas/FindingLabel"
+          },
+          "review_status": {
+            "$ref": "#/components/schemas/ReviewStatus"
+          },
+          "start_s": {
+            "minimum": 0,
+            "title": "Start S",
+            "type": "number"
+          }
+        },
+        "required": [
+          "kind",
+          "label",
+          "confidence",
+          "start_s",
+          "end_s",
+          "evidence",
+          "id",
+          "review_status"
+        ],
+        "title": "Finding",
+        "type": "object"
+      },
+      "FindingKind": {
+        "enum": [
+          "activity",
+          "interaction",
+          "speech",
+          "vitals"
+        ],
+        "title": "FindingKind",
+        "type": "string"
+      },
+      "FindingLabel": {
+        "enum": [
+          "possible_fall",
+          "abrupt_movement",
+          "prolonged_inactivity",
+          "isolation",
+          "interaction",
+          "explicit_distress_phrase",
+          "long_silence",
+          "frequent_interruptions",
+          "BASELINE_PENDING",
+          "HR_ABOVE_PERSONAL_BASELINE",
+          "HR_OUT_OF_RANGE",
+          "CONTACT_TEMPERATURE_OUT_OF_RANGE",
+          "FALL_PATTERN",
+          "PPG_CONTACT_LOST"
+        ],
+        "title": "FindingLabel",
+        "type": "string"
+      },
+      "FindingPatch": {
+        "additionalProperties": false,
+        "properties": {
+          "crew_member_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Crew Member Id"
+          },
+          "review_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReviewStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "FindingPatch",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -260,6 +806,78 @@
         "title": "Health",
         "type": "object"
       },
+      "HeartRateTrend": {
+        "additionalProperties": false,
+        "properties": {
+          "baseline_bpm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Baseline Bpm"
+          },
+          "delta_bpm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delta Bpm"
+          },
+          "latest_bpm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Bpm"
+          },
+          "mean_bpm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mean Bpm"
+          },
+          "missing_samples": {
+            "title": "Missing Samples",
+            "type": "integer"
+          },
+          "samples": {
+            "title": "Samples",
+            "type": "integer"
+          },
+          "valid_samples": {
+            "title": "Valid Samples",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "samples",
+          "valid_samples",
+          "missing_samples",
+          "baseline_bpm",
+          "mean_bpm",
+          "latest_bpm",
+          "delta_bpm"
+        ],
+        "title": "HeartRateTrend",
+        "type": "object"
+      },
       "Insight": {
         "additionalProperties": false,
         "description": "The analysis of one reading. It flags a pattern for review; it is not a\ndiagnosis.",
@@ -269,12 +887,36 @@
             "title": "Created At",
             "type": "string"
           },
+          "crew_member_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Crew Member Id"
+          },
           "device_id": {
             "maxLength": 64,
             "minLength": 1,
             "pattern": "^[a-z0-9-]+$",
             "title": "Device Id",
             "type": "string"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Id"
           },
           "limitations": {
             "items": {
@@ -467,6 +1109,176 @@
         "title": "MissingReason",
         "type": "string"
       },
+      "Mission": {
+        "additionalProperties": false,
+        "properties": {
+          "crew": {
+            "items": {
+              "$ref": "#/components/schemas/CrewMember"
+            },
+            "title": "Crew",
+            "type": "array"
+          },
+          "ended_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ended At"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "started_at": {
+            "format": "date-time",
+            "title": "Started At",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/MissionStatus"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "status",
+          "started_at",
+          "ended_at",
+          "crew"
+        ],
+        "title": "Mission",
+        "type": "object"
+      },
+      "MissionStatus": {
+        "enum": [
+          "active",
+          "ended"
+        ],
+        "title": "MissionStatus",
+        "type": "string"
+      },
+      "Modality": {
+        "enum": [
+          "wearable",
+          "video",
+          "audio"
+        ],
+        "title": "Modality",
+        "type": "string"
+      },
+      "ModelRun": {
+        "additionalProperties": false,
+        "properties": {
+          "completed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "crew_member_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Crew Member Id"
+          },
+          "findings": {
+            "items": {
+              "$ref": "#/components/schemas/Finding"
+            },
+            "title": "Findings",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "modality": {
+            "$ref": "#/components/schemas/Modality"
+          },
+          "model_name": {
+            "title": "Model Name",
+            "type": "string"
+          },
+          "model_version": {
+            "title": "Model Version",
+            "type": "string"
+          },
+          "source": {
+            "$ref": "#/components/schemas/Source"
+          },
+          "started_at": {
+            "format": "date-time",
+            "title": "Started At",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ModelRunStatus"
+          }
+        },
+        "required": [
+          "id",
+          "model_name",
+          "model_version",
+          "status",
+          "source",
+          "modality",
+          "crew_member_id",
+          "started_at",
+          "completed_at",
+          "findings"
+        ],
+        "title": "ModelRun",
+        "type": "object"
+      },
+      "ModelRunMessage": {
+        "additionalProperties": false,
+        "properties": {
+          "model_run": {
+            "$ref": "#/components/schemas/ModelRun"
+          },
+          "type": {
+            "const": "model_run",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "model_run"
+        ],
+        "title": "ModelRunMessage",
+        "type": "object"
+      },
+      "ModelRunStatus": {
+        "enum": [
+          "completed",
+          "failed",
+          "unavailable"
+        ],
+        "title": "ModelRunStatus",
+        "type": "string"
+      },
       "ModelStatus": {
         "enum": [
           "ready",
@@ -474,6 +1286,127 @@
         ],
         "title": "ModelStatus",
         "type": "string"
+      },
+      "NewFinding": {
+        "additionalProperties": false,
+        "description": "One finding an external model reports inside a run.",
+        "properties": {
+          "confidence": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "type": "number"
+          },
+          "crew_member_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Crew Member Id"
+          },
+          "end_s": {
+            "minimum": 0.0,
+            "title": "End S",
+            "type": "number"
+          },
+          "evidence": {
+            "$ref": "#/components/schemas/Evidence"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/FindingKind"
+          },
+          "label": {
+            "$ref": "#/components/schemas/FindingLabel"
+          },
+          "start_s": {
+            "minimum": 0.0,
+            "title": "Start S",
+            "type": "number"
+          }
+        },
+        "required": [
+          "kind",
+          "label",
+          "confidence",
+          "start_s",
+          "end_s",
+          "evidence"
+        ],
+        "title": "NewFinding",
+        "type": "object"
+      },
+      "NewModelRun": {
+        "additionalProperties": false,
+        "description": "What a model posts: one execution and the findings it produced.",
+        "properties": {
+          "completed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "crew_member_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Crew Member Id"
+          },
+          "findings": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/NewFinding"
+            },
+            "title": "Findings",
+            "type": "array"
+          },
+          "modality": {
+            "$ref": "#/components/schemas/Modality"
+          },
+          "model_name": {
+            "title": "Model Name",
+            "type": "string"
+          },
+          "model_version": {
+            "title": "Model Version",
+            "type": "string"
+          },
+          "source": {
+            "$ref": "#/components/schemas/Source"
+          },
+          "started_at": {
+            "format": "date-time",
+            "title": "Started At",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ModelRunStatus"
+          }
+        },
+        "required": [
+          "model_name",
+          "model_version",
+          "status",
+          "source",
+          "modality",
+          "started_at"
+        ],
+        "title": "NewModelRun",
+        "type": "object"
       },
       "PpgContact": {
         "enum": [
@@ -483,6 +1416,71 @@
         ],
         "title": "PpgContact",
         "type": "string"
+      },
+      "PublicProfile": {
+        "additionalProperties": false,
+        "description": "Public reference data the NASA import fills in. Not health data.",
+        "properties": {
+          "agency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agency"
+          },
+          "bio": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bio"
+          },
+          "imported_at": {
+            "format": "date-time",
+            "title": "Imported At",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "photo_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Photo Url"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          }
+        },
+        "required": [
+          "name",
+          "imported_at"
+        ],
+        "title": "PublicProfile",
+        "type": "object"
       },
       "Quality": {
         "additionalProperties": false,
@@ -506,12 +1504,36 @@
         "additionalProperties": false,
         "description": "A validated sample as the server stores and publishes it.",
         "properties": {
+          "crew_member_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Crew Member Id"
+          },
           "device_id": {
             "maxLength": 64,
             "minLength": 1,
             "pattern": "^[a-z0-9-]+$",
             "title": "Device Id",
             "type": "string"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Id"
           },
           "measurements": {
             "$ref": "#/components/schemas/Measurements"
@@ -614,6 +1636,15 @@
         "title": "ReplayRequest",
         "type": "object"
       },
+      "ReviewStatus": {
+        "enum": [
+          "pending",
+          "confirmed",
+          "dismissed"
+        ],
+        "title": "ReviewStatus",
+        "type": "string"
+      },
       "RiskLevel": {
         "enum": [
           "normal",
@@ -674,12 +1705,74 @@
         "title": "Severity",
         "type": "string"
       },
+      "SignalOrigin": {
+        "enum": [
+          "insight",
+          "finding"
+        ],
+        "title": "SignalOrigin",
+        "type": "string"
+      },
+      "SignalQuality": {
+        "additionalProperties": false,
+        "properties": {
+          "missing": {
+            "default": [],
+            "items": {
+              "enum": [
+                "heart_rate_bpm",
+                "contact_temperature_c",
+                "accel_min_m_s2",
+                "accel_max_m_s2",
+                "accel_mean_m_s2"
+              ],
+              "type": "string"
+            },
+            "title": "Missing",
+            "type": "array"
+          },
+          "motion_artifact": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motion Artifact"
+          },
+          "ppg_contact": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PpgContact"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Source"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "SignalQuality",
+        "type": "object"
+      },
       "SocketMessage": {
         "discriminator": {
           "mapping": {
             "device_status": "#/components/schemas/DeviceStatusMessage",
             "error": "#/components/schemas/ErrorMessage",
             "insight": "#/components/schemas/InsightMessage",
+            "model_run": "#/components/schemas/ModelRunMessage",
             "telemetry": "#/components/schemas/TelemetryMessage"
           },
           "propertyName": "type"
@@ -696,6 +1789,9 @@
           },
           {
             "$ref": "#/components/schemas/ErrorMessage"
+          },
+          {
+            "$ref": "#/components/schemas/ModelRunMessage"
           }
         ]
       },
@@ -784,6 +1880,257 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/alerts": {
+      "get": {
+        "operationId": "alerts_api_v1_alerts_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/AlertStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "crew_member_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Crew Member Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Alert"
+                  },
+                  "title": "Response Alerts Api V1 Alerts Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Alerts"
+      }
+    },
+    "/api/v1/alerts/{alert_id}/reviews": {
+      "get": {
+        "operationId": "reviews_api_v1_alerts__alert_id__reviews_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "alert_id",
+            "required": true,
+            "schema": {
+              "title": "Alert Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AlertReview"
+                  },
+                  "title": "Response Reviews Api V1 Alerts  Alert Id  Reviews Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reviews"
+      },
+      "post": {
+        "operationId": "post_review_api_v1_alerts__alert_id__reviews_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "alert_id",
+            "required": true,
+            "schema": {
+              "title": "Alert Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlertReviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertReview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Post Review"
+      }
+    },
+    "/api/v1/crew": {
+      "get": {
+        "operationId": "crew_api_v1_crew_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CrewMember"
+                  },
+                  "title": "Response Crew Api V1 Crew Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Crew"
+      }
+    },
+    "/api/v1/crew/{crew_member_id}/assessment": {
+      "get": {
+        "operationId": "assessment_api_v1_crew__crew_member_id__assessment_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "crew_member_id",
+            "required": true,
+            "schema": {
+              "title": "Crew Member Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "start",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start"
+            }
+          },
+          {
+            "in": "query",
+            "name": "end",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CrewAssessment"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Assessment"
+      }
+    },
     "/api/v1/demo/replay": {
       "post": {
         "operationId": "start_replay_api_v1_demo_replay_post",
@@ -902,6 +2249,55 @@
           }
         },
         "summary": "Events"
+      }
+    },
+    "/api/v1/findings/{finding_id}": {
+      "patch": {
+        "operationId": "patch_finding_api_v1_findings__finding_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "finding_id",
+            "required": true,
+            "schema": {
+              "title": "Finding Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FindingPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Finding"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Patch Finding"
       }
     },
     "/api/v1/insights/latest": {
@@ -1083,6 +2479,164 @@
           }
         },
         "summary": "Latest Measurement"
+      }
+    },
+    "/api/v1/missions": {
+      "get": {
+        "operationId": "missions_api_v1_missions_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Mission"
+                  },
+                  "title": "Response Missions Api V1 Missions Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Missions"
+      }
+    },
+    "/api/v1/model-runs": {
+      "get": {
+        "operationId": "model_runs_api_v1_model_runs_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "crew_member_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Crew Member Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "modality",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Modality"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Modality"
+            }
+          },
+          {
+            "in": "query",
+            "name": "start",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start"
+            }
+          },
+          {
+            "in": "query",
+            "name": "end",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ModelRun"
+                  },
+                  "title": "Response Model Runs Api V1 Model Runs Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Model Runs"
+      },
+      "post": {
+        "operationId": "post_model_run_api_v1_model_runs_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewModelRun"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelRun"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Post Model Run"
       }
     },
     "/api/v1/sessions": {

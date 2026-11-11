@@ -44,20 +44,51 @@ One reading's path from the serial line to the browser:
 2. The pipeline parses the line as a `DeviceSample`, drops duplicates, opens
    a new session when `seq` resets, and stamps `received_at`.
 3. [`store.py`](../server/src/astra/store.py) writes the `Reading` to
-   SQLite, with every measurement as a column.
+   SQLite, with every measurement as a column. The reading keeps the
+   `crew_member_id` of the device's assignee at that moment.
 4. The session's analyzer from
    [`analysis.py`](../server/src/astra/analysis.py) returns an `Insight`,
    which the pipeline stores; `risk_level: review` also writes an `alert`
-   event.
-5. [`hub.py`](../server/src/astra/hub.py) fans the `telemetry`, `insight`
-   and `device_status` messages out to each WebSocket client at
+   event and opens an `Alert` for the crew member.
+5. [`hub.py`](../server/src/astra/hub.py) fans the `telemetry`, `insight`,
+   `device_status` and `model_run` messages out to each WebSocket client at
    `/ws/v1/telemetry` through a bounded per-client queue.
 6. The browser shows the reading with its `source`.
 
 A device goes `stale` after 5 s without a line and `disconnected` after
 15 s or when the port goes away; the reader reconnects when the port
-returns. `POST /api/v1/demo/replay` feeds a stored session through the same
+returns. Several devices can share one port: the simulator's `--crew` mode
+interleaves the lines of `astra-01` to `astra-04`, and the pipeline keeps
+sessions, sequence numbers and baselines per device.
+`POST /api/v1/demo/replay` feeds a stored session through the same
 pipeline at `speed` times real time with `source: REPLAY`.
+
+## Crew, models and review
+
+[`seed.py`](../server/src/astra/seed.py) loads mission AZRIEL-1 on an empty
+database: four crew members, one of them the doctor, and `astra-01` to
+`astra-04` assigned to them in order. It runs from `create_app` and is
+idempotent.
+
+External models post one `ModelRun` with their findings to
+`POST /api/v1/model-runs`. The run is stored, published as a `model_run`
+message, and each finding on a review label with confidence of at least
+0.6 opens an `Alert` ([`alerts.py`](../server/src/astra/alerts.py) holds the
+labels and priorities). The wearable rules are not a `ModelRun`: they keep
+producing `Insight` directly, and a `review` insight opens an alert the
+same way.
+
+The doctor reviews: `PATCH /api/v1/findings/{id}` confirms or dismisses a
+finding or reassigns its crew member, and
+`POST /api/v1/alerts/{id}/reviews` appends a review — new status, comment,
+optional action, actor — that sets the alert's status. Reviews are never
+edited or deleted.
+
+[`assessment.py`](../server/src/astra/assessment.py) builds the
+`CrewAssessment` for `GET /api/v1/crew/{id}/assessment`: the heart-rate
+trend against the member's baseline, the latest insight, the findings of
+every modality, the open alerts and the contributing variables and data
+quality of each signal. It only reads what is stored.
 
 ## The web app
 

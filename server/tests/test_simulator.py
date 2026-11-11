@@ -8,6 +8,7 @@ from astra.simulator import (
     MOTION_RANGE_M_S2,
     SCENARIOS,
     WARMUP_S,
+    crew_lines,
     format_line,
     lines,
     main,
@@ -108,3 +109,33 @@ def test_command_prints_the_lines_of_the_scenario(
     assert capsys.readouterr().out.splitlines() == [
         line for _, line in lines("disconnect", 3)
     ]
+
+
+def test_crew_interleaves_one_device_per_scenario() -> None:
+    spec = ["normal", "fall", "lost-contact", "hr-above-baseline"]
+    got = [DeviceSample.model_validate_json(line) for _, line in crew_lines(spec, 3)]
+
+    assert {s.device_id for s in got} == {
+        "astra-01",
+        "astra-02",
+        "astra-03",
+        "astra-04",
+    }
+    for device_id in {s.device_id for s in got}:
+        own = [s.seq for s in got if s.device_id == device_id]
+        assert own == sorted(own)
+    fall = [s for s in got if s.device_id == "astra-02"]
+    assert max(s.measurements.accel_max_m_s2 or 0 for s in fall) > 25
+
+
+def test_crew_command_writes_every_wearer(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    code = main(["--crew", "normal,fall", "--seed", "3", "--speed", "100000"])
+
+    assert code == 0
+    out = [
+        DeviceSample.model_validate_json(line)
+        for line in capsys.readouterr().out.splitlines()
+    ]
+    assert {s.device_id for s in out} == {"astra-01", "astra-02"}

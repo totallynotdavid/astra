@@ -11,8 +11,10 @@ function reading(tMs: number, hr: number | null, source: Source = "LIVE"): Readi
   seq += 1;
   return {
     schema_version: "1.0",
+    id: seq,
     session_id: "s1",
     device_id: "astra-01",
+    crew_member_id: null,
     seq,
     uptime_ms: seq * 1000,
     received_at: new Date(tMs).toISOString(),

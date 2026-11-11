@@ -250,6 +250,32 @@ def lines(
         yield sample.uptime_ms, format_line(sample)
 
 
+def crew_lines(
+    scenarios: Sequence[str], seed: int | None = None
+) -> Iterator[tuple[int, str]]:
+    """Interleaved lines for `astra-01` to `astra-0N`, one wearer per scenario."""
+    streams = [
+        list(
+            lines(
+                scenario,
+                None if seed is None else seed + index,
+                f"astra-{index + 1:02d}",
+            )
+        )
+        for index, scenario in enumerate(scenarios)
+    ]
+    merged = sorted(
+        (
+            (uptime_ms, index, line)
+            for index, stream in enumerate(streams)
+            for uptime_ms, line in stream
+        ),
+        key=lambda entry: (entry[0], entry[1]),
+    )
+    for uptime_ms, _index, line in merged:
+        yield uptime_ms, line
+
+
 def play(
     timed_lines: Iterable[tuple[int, str]],
     emit: Callable[[str], None],
@@ -309,6 +335,14 @@ def parser() -> argparse.ArgumentParser:
     p.add_argument("--seed", type=int)
     p.add_argument("--device-id", type=device_id, default=DEFAULT_DEVICE_ID)
     p.add_argument(
+        "--crew",
+        metavar="S1,S2,...",
+        help=(
+            "run one wearer per comma-separated scenario on astra-01, astra-02,"
+            " ... interleaved on the same output"
+        ),
+    )
+    p.add_argument(
         "--pty",
         action="store_true",
         help="print to a new pseudo-terminal and print its path",
@@ -318,7 +352,19 @@ def parser() -> argparse.ArgumentParser:
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = parser().parse_args(argv)
-    timed = lines(args.scenario, args.seed, args.device_id)
+    if args.crew is not None:
+        if args.scenario != "normal" or args.device_id != DEFAULT_DEVICE_ID:
+            parser().error("--crew does not take --scenario or --device-id")
+        scenarios = args.crew.split(",")
+        unknown = [name for name in scenarios if name not in SCENARIOS]
+        if unknown:
+            parser().error(
+                f"unknown scenario: {', '.join(unknown)}"
+                f" (choose from {', '.join(sorted(SCENARIOS))})"
+            )
+        timed = crew_lines(scenarios, args.seed)
+    else:
+        timed = lines(args.scenario, args.seed, args.device_id)
     try:
         if args.pty:
             pty = Pty()

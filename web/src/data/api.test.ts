@@ -25,8 +25,10 @@ const device: DeviceStatus = {
 
 const reading: Reading = {
   schema_version: "1.0",
+  id: 1,
   session_id: "s1",
   device_id: "astra-01",
+  crew_member_id: null,
   seq: 1,
   uptime_ms: 1000,
   received_at: "2026-11-11T10:00:00Z",
@@ -45,8 +47,10 @@ const reading: Reading = {
 
 const insight: Insight = {
   schema_version: "1.0",
+  id: 1,
   session_id: "s1",
   device_id: "astra-01",
+  crew_member_id: null,
   seq: 1,
   created_at: "2026-11-11T10:00:00Z",
   risk_level: "normal",

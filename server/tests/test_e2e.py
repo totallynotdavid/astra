@@ -91,13 +91,23 @@ def events(client: TestClient) -> list[dict[str, Any]]:
     return cast(list[dict[str, Any]], response.json())
 
 
+def status_events(client: TestClient, device_id: str = DEVICE_ID) -> list[str]:
+    events = client.get(
+        "/api/v1/events", params={"device_id": device_id, "limit": 5000}
+    ).json()
+    return [e["code"] for e in events if e["kind"] == "device_status"]
+
+
 def device_status(client: TestClient, device_id: str = DEVICE_ID) -> str:
     devices = client.get("/api/v1/devices").json()
     return cast(str, next(d["status"] for d in devices if d["device_id"] == device_id))
 
 
 def wait_readings(client: TestClient, count: int) -> list[dict[str, Any]]:
-    wait_for(lambda: len(measurements(client)) >= count, f"{count} stored readings")
+    wait_for(
+        lambda: pipeline_of(client).store.reading_count(DEVICE_ID) >= count,
+        f"{count} stored readings",
+    )
     return measurements(client)
 
 
@@ -292,12 +302,15 @@ def test_link_gap_moves_device_through_stale_and_back(
     wait_readings(board.client, len(entries))
     assert device_status(board.client) == "connected"
 
+    expected = ["connected", "stale", "disconnected", "connected"]
     wait_for(
-        lambda: (
-            recorder.statuses()[-4:]
-            == ["connected", "stale", "disconnected", "connected"]
-        ),
+        lambda: status_events(board.client)[:4][::-1] == expected,
         "the status transitions",
+    )
+    wait_for(
+        lambda: recorder.statuses()[-4:] == expected,
+        "the socket to deliver the transitions",
+        timeout=30,
     )
     assert len(sessions(board.client)) == 1
 

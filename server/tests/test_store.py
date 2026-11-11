@@ -54,7 +54,7 @@ def test_reading_round_trip(tmp_path: Path) -> None:
     session = store.start_session("astra-01", Source.LIVE, "en vivo", T0)
     reading = make_reading(session_id=session.id)
     store.touch_device("astra-01", T0)
-    store.insert_reading(reading)
+    reading = store.insert_reading(reading)
 
     assert store.latest_reading("astra-01") == reading
     assert store.readings("astra-01", None, None, 10) == [reading]
@@ -137,7 +137,7 @@ def test_insight_round_trip(tmp_path: Path) -> None:
         reason_codes=[],
         limitations=[],
     )
-    store.insert_insight(insight)
+    insight = store.insert_insight(insight)
     assert store.latest_insight("astra-01") == insight
     assert store.latest_insight("astra-02") is None
 

@@ -17,6 +17,7 @@ from datetime import datetime, timedelta
 import serial
 from pydantic import ValidationError
 
+from astra.alerts import alert_for_insight
 from astra.analysis import Analyzer, AnalyzerFactory, new_analyzer
 from astra.contract import (
     SCHEMA_VERSION,
@@ -30,6 +31,8 @@ from astra.contract import (
     InsightMessage,
     LinkStatus,
     Method,
+    ModelRun,
+    ModelRunMessage,
     ModelStatus,
     Reading,
     RiskLevel,
@@ -215,6 +218,7 @@ class Pipeline:
                 schema_version=SCHEMA_VERSION,
                 session_id=device.session_id,
                 device_id=sample.device_id,
+                crew_member_id=self.store.device_crew_member(sample.device_id, now),
                 seq=sample.seq,
                 uptime_ms=sample.uptime_ms,
                 received_at=now,
@@ -227,10 +231,12 @@ class Pipeline:
         )
 
     def _emit(self, reading: Reading) -> None:
-        self.store.insert_reading(reading)
+        reading = self.store.insert_reading(reading)
         self._hub.publish(TelemetryMessage(type="telemetry", reading=reading))
-        insight = self._analyze(reading)
-        self.store.insert_insight(insight)
+        insight = self._analyze(reading).model_copy(
+            update={"crew_member_id": reading.crew_member_id}
+        )
+        insight = self.store.insert_insight(insight)
         self._hub.publish(InsightMessage(type="insight", insight=insight))
         self._model_status = (
             ModelStatus.UNAVAILABLE
@@ -246,6 +252,7 @@ class Pipeline:
                 insight.reason_codes[0].value if insight.reason_codes else "review",
                 "Patrón marcado para revisión",
             )
+            alert_for_insight(self.store, reading, insight, self._clock())
 
     def _analyze(self, reading: Reading) -> Insight:
         try:
@@ -325,15 +332,22 @@ class Pipeline:
         code: str,
         message: str,
     ) -> Event:
+        now = self._clock()
         return self.store.insert_event(
             session_id=session_id,
             device_id=device_id,
-            created_at=self._clock(),
+            created_at=now,
             kind=kind,
             severity=severity,
             code=code,
             message=message,
+            crew_member_id=(
+                self.store.device_crew_member(device_id, now) if device_id else None
+            ),
         )
+
+    def publish_model_run(self, run: ModelRun) -> None:
+        self._hub.publish(ModelRunMessage(type="model_run", model_run=run))
 
     def device_statuses(self) -> list[DeviceStatus]:
         with self._lock:

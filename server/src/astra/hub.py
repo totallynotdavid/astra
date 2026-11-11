@@ -15,10 +15,17 @@ from astra.contract import (
     DeviceStatusMessage,
     ErrorMessage,
     InsightMessage,
+    ModelRunMessage,
     TelemetryMessage,
 )
 
-Message = TelemetryMessage | InsightMessage | DeviceStatusMessage | ErrorMessage
+Message = (
+    TelemetryMessage
+    | InsightMessage
+    | DeviceStatusMessage
+    | ErrorMessage
+    | ModelRunMessage
+)
 
 QUEUE_SIZE = 256
 
