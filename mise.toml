@@ -1,0 +1,67 @@
+[tools]
+bun = "1.4.4"
+python = "3.15.2"
+uv = "0.13.7"
+
+[tasks.install]
+description = "Install the server and web dependencies from their lockfiles"
+run = ["bun install --frozen-lockfile", "uv sync --locked --project server"]
+
+[tasks.dev]
+description = "Run the server and the web app with reload"
+depends = ["dev:server", "dev:web"]
+
+[tasks."dev:server"]
+description = "Run the API on 127.0.0.1:8000"
+dir = "server"
+run = "uv run uvicorn astra.app:create_app --factory --reload --host 127.0.0.1 --port 8000"
+
+[tasks."dev:web"]
+description = "Run the web app with a proxy to the API"
+run = "bun run --cwd web dev"
+
+[tasks.generate]
+description = "Regenerate contract/openapi.json and the web types from the Pydantic models"
+run = [
+  "cd server && uv run python -m astra.openapi > ../contract/openapi.json",
+  "bun run --cwd tools/contract generate",
+  "bunx oxfmt web/src/contract/api.ts",
+]
+
+[tasks."lint:contract"]
+description = "Fail when the generated contract files differ from the models"
+run = "scripts/check-contract"
+
+[tasks.lint]
+description = "Run every read-only linter and formatter check"
+depends = ["lint:*"]
+
+[tasks."lint:python"]
+dir = "server"
+run = ["uv run ruff check --no-fix .", "uv run ruff format --check ."]
+
+[tasks."lint:web"]
+run = ["bun run --cwd web lint", "bunx oxfmt --check web/src web/vite.config.ts"]
+
+[tasks.fix]
+description = "Apply safe lint fixes and format source files"
+run = [
+  "cd server && uv run ruff check --fix . && uv run ruff format .",
+  "bunx oxfmt web/src web/vite.config.ts",
+]
+
+[tasks.typecheck]
+description = "Typecheck the server and the web app"
+run = ["cd server && uv run mypy", "bun run --cwd web typecheck"]
+
+[tasks.test]
+description = "Run the server and web test suites"
+run = ["cd server && uv run pytest -q", "bun run --cwd web test"]
+
+[tasks.build]
+description = "Build the web app into web/dist"
+run = "bun run --cwd web build"
+
+[tasks.check]
+description = "Run every repository check without writing files"
+run = ["mise run lint", "mise run typecheck", "mise run test", "mise run build"]

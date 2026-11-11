@@ -1,0 +1,1129 @@
+{
+  "components": {
+    "schemas": {
+      "DeviceSample": {
+        "additionalProperties": false,
+        "description": "One JSON line the firmware prints over serial.",
+        "properties": {
+          "device_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[a-z0-9-]+$",
+            "title": "Device Id",
+            "type": "string"
+          },
+          "measurements": {
+            "$ref": "#/components/schemas/Measurements"
+          },
+          "missing": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/MissingReason"
+            },
+            "default": {},
+            "propertyNames": {
+              "enum": [
+                "heart_rate_bpm",
+                "contact_temperature_c",
+                "accel_min_m_s2",
+                "accel_max_m_s2",
+                "accel_mean_m_s2"
+              ]
+            },
+            "title": "Missing",
+            "type": "object"
+          },
+          "quality": {
+            "$ref": "#/components/schemas/Quality"
+          },
+          "sampling_rate_hz": {
+            "exclusiveMinimum": 0,
+            "title": "Sampling Rate Hz",
+            "type": "number"
+          },
+          "schema_version": {
+            "const": "1.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "seq": {
+            "minimum": 0,
+            "title": "Seq",
+            "type": "integer"
+          },
+          "uptime_ms": {
+            "minimum": 0,
+            "title": "Uptime Ms",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "schema_version",
+          "device_id",
+          "seq",
+          "uptime_ms",
+          "sampling_rate_hz",
+          "measurements",
+          "quality"
+        ],
+        "title": "DeviceSample",
+        "type": "object"
+      },
+      "DeviceStatus": {
+        "additionalProperties": false,
+        "properties": {
+          "device_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[a-z0-9-]+$",
+            "title": "Device Id",
+            "type": "string"
+          },
+          "last_seen_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Seen At"
+          },
+          "status": {
+            "$ref": "#/components/schemas/LinkStatus"
+          }
+        },
+        "required": [
+          "device_id",
+          "status",
+          "last_seen_at"
+        ],
+        "title": "DeviceStatus",
+        "type": "object"
+      },
+      "DeviceStatusMessage": {
+        "additionalProperties": false,
+        "properties": {
+          "device_status": {
+            "$ref": "#/components/schemas/DeviceStatus"
+          },
+          "type": {
+            "const": "device_status",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "device_status"
+        ],
+        "title": "DeviceStatusMessage",
+        "type": "object"
+      },
+      "ErrorMessage": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "const": "error",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "code",
+          "message"
+        ],
+        "title": "ErrorMessage",
+        "type": "object"
+      },
+      "Event": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "device_id": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 1,
+                "pattern": "^[a-z0-9-]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device Id"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/EventKind"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/Severity"
+          }
+        },
+        "required": [
+          "id",
+          "session_id",
+          "device_id",
+          "created_at",
+          "kind",
+          "severity",
+          "code",
+          "message"
+        ],
+        "title": "Event",
+        "type": "object"
+      },
+      "EventKind": {
+        "enum": [
+          "alert",
+          "device_status",
+          "ingest_error"
+        ],
+        "title": "EventKind",
+        "type": "string"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "Health": {
+        "additionalProperties": false,
+        "properties": {
+          "model": {
+            "$ref": "#/components/schemas/ModelStatus"
+          },
+          "schema_version": {
+            "const": "1.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "serial": {
+            "$ref": "#/components/schemas/LinkStatus"
+          },
+          "storage": {
+            "$ref": "#/components/schemas/StorageStatus"
+          }
+        },
+        "required": [
+          "schema_version",
+          "serial",
+          "model",
+          "storage"
+        ],
+        "title": "Health",
+        "type": "object"
+      },
+      "Insight": {
+        "additionalProperties": false,
+        "description": "The analysis of one reading. It flags a pattern for review; it is not a\ndiagnosis.",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "device_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[a-z0-9-]+$",
+            "title": "Device Id",
+            "type": "string"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Limitations",
+            "type": "array"
+          },
+          "method": {
+            "$ref": "#/components/schemas/Method"
+          },
+          "reason_codes": {
+            "items": {
+              "$ref": "#/components/schemas/ReasonCode"
+            },
+            "title": "Reason Codes",
+            "type": "array"
+          },
+          "risk_level": {
+            "$ref": "#/components/schemas/RiskLevel"
+          },
+          "schema_version": {
+            "const": "1.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "schema_version",
+          "session_id",
+          "device_id",
+          "seq",
+          "created_at",
+          "risk_level",
+          "method",
+          "version",
+          "score",
+          "reason_codes",
+          "limitations"
+        ],
+        "title": "Insight",
+        "type": "object"
+      },
+      "InsightMessage": {
+        "additionalProperties": false,
+        "properties": {
+          "insight": {
+            "$ref": "#/components/schemas/Insight"
+          },
+          "type": {
+            "const": "insight",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "insight"
+        ],
+        "title": "InsightMessage",
+        "type": "object"
+      },
+      "LinkStatus": {
+        "enum": [
+          "connected",
+          "stale",
+          "disconnected"
+        ],
+        "title": "LinkStatus",
+        "type": "string"
+      },
+      "Measurements": {
+        "additionalProperties": false,
+        "description": "One second of sensor output. A value the sensor could not give is null.",
+        "properties": {
+          "accel_max_m_s2": {
+            "anyOf": [
+              {
+                "maximum": 200,
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accel Max M S2"
+          },
+          "accel_mean_m_s2": {
+            "anyOf": [
+              {
+                "maximum": 200,
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accel Mean M S2"
+          },
+          "accel_min_m_s2": {
+            "anyOf": [
+              {
+                "maximum": 200,
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accel Min M S2"
+          },
+          "contact_temperature_c": {
+            "anyOf": [
+              {
+                "maximum": 60,
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Temperature C"
+          },
+          "heart_rate_bpm": {
+            "anyOf": [
+              {
+                "maximum": 300,
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Heart Rate Bpm"
+          }
+        },
+        "required": [
+          "heart_rate_bpm",
+          "contact_temperature_c",
+          "accel_min_m_s2",
+          "accel_max_m_s2",
+          "accel_mean_m_s2"
+        ],
+        "title": "Measurements",
+        "type": "object"
+      },
+      "Method": {
+        "enum": [
+          "rules",
+          "ml"
+        ],
+        "title": "Method",
+        "type": "string"
+      },
+      "MissingReason": {
+        "enum": [
+          "no_contact",
+          "warming_up",
+          "sensor_error",
+          "not_present"
+        ],
+        "title": "MissingReason",
+        "type": "string"
+      },
+      "ModelStatus": {
+        "enum": [
+          "ready",
+          "unavailable"
+        ],
+        "title": "ModelStatus",
+        "type": "string"
+      },
+      "PpgContact": {
+        "enum": [
+          "ok",
+          "lost",
+          "unknown"
+        ],
+        "title": "PpgContact",
+        "type": "string"
+      },
+      "Quality": {
+        "additionalProperties": false,
+        "properties": {
+          "motion_artifact": {
+            "title": "Motion Artifact",
+            "type": "boolean"
+          },
+          "ppg_contact": {
+            "$ref": "#/components/schemas/PpgContact"
+          }
+        },
+        "required": [
+          "ppg_contact",
+          "motion_artifact"
+        ],
+        "title": "Quality",
+        "type": "object"
+      },
+      "Reading": {
+        "additionalProperties": false,
+        "description": "A validated sample as the server stores and publishes it.",
+        "properties": {
+          "device_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[a-z0-9-]+$",
+            "title": "Device Id",
+            "type": "string"
+          },
+          "measurements": {
+            "$ref": "#/components/schemas/Measurements"
+          },
+          "missing": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/MissingReason"
+            },
+            "propertyNames": {
+              "enum": [
+                "heart_rate_bpm",
+                "contact_temperature_c",
+                "accel_min_m_s2",
+                "accel_max_m_s2",
+                "accel_mean_m_s2"
+              ]
+            },
+            "title": "Missing",
+            "type": "object"
+          },
+          "quality": {
+            "$ref": "#/components/schemas/Quality"
+          },
+          "received_at": {
+            "format": "date-time",
+            "title": "Received At",
+            "type": "string"
+          },
+          "sampling_rate_hz": {
+            "title": "Sampling Rate Hz",
+            "type": "number"
+          },
+          "schema_version": {
+            "const": "1.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "source": {
+            "$ref": "#/components/schemas/Source"
+          },
+          "uptime_ms": {
+            "title": "Uptime Ms",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "schema_version",
+          "session_id",
+          "device_id",
+          "seq",
+          "uptime_ms",
+          "received_at",
+          "source",
+          "sampling_rate_hz",
+          "measurements",
+          "quality",
+          "missing"
+        ],
+        "title": "Reading",
+        "type": "object"
+      },
+      "ReasonCode": {
+        "enum": [
+          "BASELINE_PENDING",
+          "HR_ABOVE_PERSONAL_BASELINE",
+          "HR_OUT_OF_RANGE",
+          "CONTACT_TEMPERATURE_OUT_OF_RANGE",
+          "FALL_PATTERN",
+          "PPG_CONTACT_LOST"
+        ],
+        "title": "ReasonCode",
+        "type": "string"
+      },
+      "ReplayRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "speed": {
+            "default": 1.0,
+            "exclusiveMinimum": 0.0,
+            "maximum": 20.0,
+            "title": "Speed",
+            "type": "number"
+          }
+        },
+        "required": [
+          "session_id"
+        ],
+        "title": "ReplayRequest",
+        "type": "object"
+      },
+      "RiskLevel": {
+        "enum": [
+          "normal",
+          "review",
+          "unavailable"
+        ],
+        "title": "RiskLevel",
+        "type": "string"
+      },
+      "Session": {
+        "additionalProperties": false,
+        "properties": {
+          "ended_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ended At"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "source": {
+            "$ref": "#/components/schemas/Source"
+          },
+          "started_at": {
+            "format": "date-time",
+            "title": "Started At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "source",
+          "label",
+          "started_at",
+          "ended_at"
+        ],
+        "title": "Session",
+        "type": "object"
+      },
+      "Severity": {
+        "enum": [
+          "info",
+          "review",
+          "critical"
+        ],
+        "title": "Severity",
+        "type": "string"
+      },
+      "SocketMessage": {
+        "discriminator": {
+          "mapping": {
+            "device_status": "#/components/schemas/DeviceStatusMessage",
+            "error": "#/components/schemas/ErrorMessage",
+            "insight": "#/components/schemas/InsightMessage",
+            "telemetry": "#/components/schemas/TelemetryMessage"
+          },
+          "propertyName": "type"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/TelemetryMessage"
+          },
+          {
+            "$ref": "#/components/schemas/InsightMessage"
+          },
+          {
+            "$ref": "#/components/schemas/DeviceStatusMessage"
+          },
+          {
+            "$ref": "#/components/schemas/ErrorMessage"
+          }
+        ]
+      },
+      "Source": {
+        "enum": [
+          "LIVE",
+          "REPLAY",
+          "HISTORICAL",
+          "SYNTHETIC"
+        ],
+        "title": "Source",
+        "type": "string"
+      },
+      "StorageStatus": {
+        "enum": [
+          "ok",
+          "error"
+        ],
+        "title": "StorageStatus",
+        "type": "string"
+      },
+      "TelemetryMessage": {
+        "additionalProperties": false,
+        "properties": {
+          "reading": {
+            "$ref": "#/components/schemas/Reading"
+          },
+          "type": {
+            "const": "telemetry",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "reading"
+        ],
+        "title": "TelemetryMessage",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "ASTRA",
+    "version": "1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/demo/replay": {
+      "post": {
+        "operationId": "start_replay_api_v1_demo_replay_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReplayRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Session"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start Replay"
+      }
+    },
+    "/api/v1/devices": {
+      "get": {
+        "operationId": "devices_api_v1_devices_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DeviceStatus"
+                  },
+                  "title": "Response Devices Api V1 Devices Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Devices"
+      }
+    },
+    "/api/v1/events": {
+      "get": {
+        "operationId": "events_api_v1_events_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "device_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Device Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Event"
+                  },
+                  "title": "Response Events Api V1 Events Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Events"
+      }
+    },
+    "/api/v1/insights/latest": {
+      "get": {
+        "operationId": "latest_insight_api_v1_insights_latest_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "device_id",
+            "required": true,
+            "schema": {
+              "title": "Device Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/Insight"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Latest Insight Api V1 Insights Latest Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Latest Insight"
+      }
+    },
+    "/api/v1/measurements": {
+      "get": {
+        "operationId": "measurements_api_v1_measurements_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "device_id",
+            "required": true,
+            "schema": {
+              "title": "Device Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "start",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start"
+            }
+          },
+          {
+            "in": "query",
+            "name": "end",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 600,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Reading"
+                  },
+                  "title": "Response Measurements Api V1 Measurements Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Measurements"
+      }
+    },
+    "/api/v1/measurements/latest": {
+      "get": {
+        "operationId": "latest_measurement_api_v1_measurements_latest_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "device_id",
+            "required": true,
+            "schema": {
+              "title": "Device Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/Reading"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Latest Measurement Api V1 Measurements Latest Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Latest Measurement"
+      }
+    },
+    "/api/v1/sessions": {
+      "get": {
+        "operationId": "sessions_api_v1_sessions_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Session"
+                  },
+                  "title": "Response Sessions Api V1 Sessions Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Sessions"
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health"
+      }
+    }
+  }
+}

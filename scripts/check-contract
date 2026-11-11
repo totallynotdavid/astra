@@ -1,0 +1,19 @@
+#!/bin/sh
+# Regenerates the contract into a scratch copy and compares it with the
+# committed files, so a model change without `mise run generate` fails.
+set -eu
+root=$(cd "$(dirname "$0")/.." && pwd)
+scratch=$(mktemp -d)
+trap 'rm -rf "$scratch"' EXIT
+
+(cd "$root/server" && uv run python -m astra.openapi) > "$scratch/openapi.json"
+cd "$root/tools/contract"
+bun --bun openapi-typescript "$scratch/openapi.json" -o "$scratch/api.ts" > /dev/null
+cd "$root"
+bunx oxfmt "$scratch/api.ts" > /dev/null
+
+status=0
+diff -u contract/openapi.json "$scratch/openapi.json" || status=1
+diff -u web/src/contract/api.ts "$scratch/api.ts" || status=1
+[ "$status" -eq 0 ] || echo "contract files are stale: run mise run generate" >&2
+exit "$status"
