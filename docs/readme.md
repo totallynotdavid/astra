@@ -11,3 +11,5 @@
 9. [Demo](demo.md)
 10. [Published demo](site.md)
 11. [NASA reference data](nasa.md)
+12. [Vision lab](vision.md)
+13. [Audio lab](audio.md)

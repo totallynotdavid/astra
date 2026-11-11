@@ -4,11 +4,12 @@ python = "3.15.2"
 uv = "0.13.7"
 
 [tasks.install]
-description = "Install the server, vision lab and web dependencies from lockfiles"
+description = "Install the server, lab and web dependencies from lockfiles"
 run = [
   "bun install --frozen-lockfile",
   "uv sync --locked --project server",
   "uv sync --locked --project labs/vision --python 3.14",
+  "uv sync --locked --project labs/audio --python 3.14",
 ]
 
 [tasks.dev]
@@ -55,6 +56,10 @@ run = ["uv run ruff check --no-fix .", "uv run ruff format --check ."]
 dir = "labs/vision"
 run = ["uv run --python 3.14 ruff check .", "uv run --python 3.14 ruff format --check ."]
 
+[tasks."lint:audio"]
+dir = "labs/audio"
+run = ["uv run --python 3.14 ruff check .", "uv run --python 3.14 ruff format --check ."]
+
 [tasks."lint:web"]
 run = ["bun run --cwd web lint", "bunx oxfmt --check web/src web/vite.config.ts"]
 
@@ -63,22 +68,25 @@ description = "Apply safe lint fixes and format source files"
 run = [
   "cd server && uv run ruff check --fix . && uv run ruff format .",
   "cd labs/vision && uv run --python 3.14 ruff check --fix . && uv run --python 3.14 ruff format .",
+  "cd labs/audio && uv run --python 3.14 ruff check --fix . && uv run --python 3.14 ruff format .",
   "bunx oxfmt web/src web/vite.config.ts",
 ]
 
 [tasks.typecheck]
-description = "Typecheck the server, vision lab and web app"
+description = "Typecheck the server, labs and web app"
 run = [
   "cd server && uv run mypy",
   "cd labs/vision && uv run --python 3.14 mypy",
+  "cd labs/audio && uv run --python 3.14 mypy",
   "bun run --cwd web typecheck",
 ]
 
 [tasks.test]
-description = "Run the server, vision lab and web test suites"
+description = "Run the server, lab and web test suites"
 run = [
   "cd server && uv run pytest -q",
   "cd labs/vision && uv run --python 3.14 pytest -q",
+  "cd labs/audio && uv run --python 3.14 pytest -q",
   "bun run --cwd web test",
 ]
 
@@ -86,6 +94,19 @@ run = [
 description = "Run the ASTRA vision lab"
 dir = "labs/vision"
 run = "uv run --python 3.14 python -m astra_vision"
+
+[tasks."lab:audio"]
+description = "Run the ASTRA audio lab"
+dir = "labs/audio"
+run = "uv run --python 3.14 python -m astra_audio"
+
+[tasks."lab:audio:generate-contract"]
+description = "Generate audio lab payload models from the server OpenAPI contract"
+dir = "labs/audio"
+run = [
+  "uvx --python 3.14 --from datamodel-code-generator==0.93.0 datamodel-codegen --input ../../contract/openapi.json --input-file-type openapi --output src/astra_audio/server_contract.py --output-model-type pydantic_v2.BaseModel --target-python-version 3.14 --disable-timestamp --formatters builtin",
+  "uv run --python 3.14 ruff format src/astra_audio/server_contract.py",
+]
 
 [tasks."lab:vision:generate-contract"]
 description = "Generate vision lab payload models from the server OpenAPI contract"
