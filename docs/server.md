@@ -1,7 +1,7 @@
 # The server
 
 [`server/src/astra/app.py`](../server/src/astra/app.py) builds the service.
-`create_app` reads four environment variables:
+`create_app` reads six environment variables:
 
 | Variable              | Default                | Meaning                                                                                                                                                                                           |
 | --------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -9,6 +9,8 @@
 | `ASTRA_DB`            | `astra.sqlite3`        | The SQLite file. `*.sqlite3` is git-ignored.                                                                                                                                                      |
 | `ASTRA_WEB_DIST`      | unset                  | A built `web/dist` to serve at `/`. Paths the app owns fall back to `index.html`. `mise run demo` sets it.                                                                                        |
 | `ASTRA_NASA_SNAPSHOT` | `server/fixtures/nasa` | The directory the seed loads the [NASA reference data](nasa.md) from.                                                                                                                             |
+| `ASTRA_DEMO`          | unset                  | `1` creates the [demo accounts](auth.md#demo-accounts) at start. `mise run demo` sets it.                                                                                                         |
+| `ASTRA_LAB_TOKEN`     | unset                  | The bearer token a local lab sends to [post model runs](auth.md#lab-token). Unset means no token is accepted.                                                                                     |
 
 Run it:
 
@@ -43,44 +45,60 @@ ASTRA_SERIAL_PORT=/dev/ttyUSB0 mise run demo
 | `alerts`             | One alert for a crew member, with `priority`, `status` and `reason`.                                |
 | `alert_links`        | The ids of the readings, insights or findings behind an alert.                                      |
 | `alert_reviews`      | One review of an alert: status, comment, optional action and actor. Never edited.                   |
+| `users`              | One [account](auth.md): username, role, scrypt hash, optional crew member, `active` flag.           |
+| `auth_sessions`      | One sign-in: the SHA-256 of the cookie token, the user and the expiry.                              |
 
-Times are stored as ISO 8601 UTC strings. `/health` reports `storage: ok`
-only while a probe write succeeds.
+Times are stored as ISO 8601 UTC strings. `/health` reports `storage: ok` only
+while a probe write succeeds.
 
 ## Ingest
 
-[`ingest.py`](../server/src/astra/ingest.py) reads the port at 115200 baud on
-a thread, one JSON line at a time, and hands each line to the pipeline.
+[`ingest.py`](../server/src/astra/ingest.py) reads the port at 115200 baud on a
+thread, one JSON line at a time, and hands each line to the pipeline.
 
-- A line that fails `DeviceSample` validation becomes an `ingest_error`
-  event and never a reading.
+- A line that fails `DeviceSample` validation becomes an `ingest_error` event
+  and never a reading.
 - A repeated `device_id` and `seq` is dropped.
 - A `seq` lower than the last one means the board rebooted: the open session
   ends and a new one starts.
-- A device is `stale` after 5 s without a line and `disconnected` after
-  15 s, or as soon as the port goes away. Each change is a `device_status`
-  event and a WebSocket message.
-- When the port disappears the reader keeps retrying; the first line after
-  it returns reconnects the device.
+- A device is `stale` after 5 s without a line and `disconnected` after 15 s, or
+  as soon as the port goes away. Each change is a `device_status` event and a
+  WebSocket message.
+- When the port disappears the reader keeps retrying; the first line after it
+  returns reconnects the device.
 
 Each stored reading goes to the session's analyzer from
 `astra.analysis.new_analyzer()` — one analyzer per session. The `Insight` is
 stored and published; `risk_level: review` also raises an `alert` event. An
-analyzer that raises produces an `unavailable` insight and ingest carries
-on. `/health` reports `model: ready` when the last insight is not
-`unavailable`.
+analyzer that raises produces an `unavailable` insight and ingest carries on.
+`/health` reports `model: ready` when the last insight is not `unavailable`.
 
 ## Replay
 
-`POST /api/v1/demo/replay` copies a stored session into a new session with
-`source: REPLAY`. The readings stream again at `speed` times their original
-spacing, through the same analysis and WebSocket path, and keep their
+`POST /api/v1/demo/replay` (admin only) copies a stored session into a new
+session with `source: REPLAY`. The readings stream again at `speed` times their
+original spacing, through the same analysis and WebSocket path, and keep their
 original `seq`. A replayed reading is never labelled `LIVE`.
 
 ## The WebSocket
 
-[`hub.py`](../server/src/astra/hub.py) fans out every message to every
-connected browser through a bounded per-client queue. On connect the
-endpoint sends the latest `device_status` of each known device, then
-`telemetry`, `insight` and `device_status` messages as they happen. A client
-whose queue fills is closed: a slow browser must not block ingest.
+[`hub.py`](../server/src/astra/hub.py) fans out every message to every connected
+client through a bounded per-client queue. The endpoint accepts a valid session
+cookie or the [lab token](auth.md#lab-token) and refuses anyone else. On connect
+it sends the latest `device_status` of each known device, then `telemetry`,
+`insight` and `device_status` messages as they happen. An astronaut gets only
+the messages of their own crew member. A client whose queue fills is closed: a
+slow browser must not block ingest.
+
+The endpoint checks a cookie session every 30 seconds and closes the socket with
+code 1008 once the session has ended.
+
+## Accounts
+
+[`auth.py`](../server/src/astra/auth.py) holds one FastAPI dependency per
+permission rule, and `app.py` attaches them to the routes. Login and logout sit
+on a router with no requirement, `POST /api/v1/model-runs` on a router that also
+takes the lab token, and every other route on a router that needs a signed-in
+user. [Accounts](auth.md) has the roles, the permission table, the first admin
+and the lab token. The `astra.users` command creates accounts from the command
+line.

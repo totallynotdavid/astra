@@ -54,81 +54,98 @@ web app shows it.
 An `Insight` is the analysis of one reading, and its `created_at` is that
 reading's `received_at`. `risk_level` is `normal`, `review` or `unavailable`.
 `method` is `rules` or `ml`, with its `version`. `reason_codes` say why, and
-`limitations` say what the result cannot claim. A `score` is null unless a
-model is calibrated.
+`limitations` say what the result cannot claim. A `score` is null unless a model
+is calibrated.
 
 ## Crew
 
-A `CrewMember` has `id`, `code` (`AZ-1` to `AZ-4`), `display_name`,
-`crew_role` (`commander`, `doctor`, `engineer` or `scientist`) and a
-`public_profile`: the name, agency, photo, bio, credit and source URL of a
-NASA astronaut, filled by the [NASA import](nasa.md). It is public reference
-data, not health data.
+A `CrewMember` has `id`, `code` (`AZ-1` to `AZ-4`), `display_name`, `crew_role`
+(`commander`, `doctor`, `engineer` or `scientist`) and a `public_profile`: the
+name, agency, photo, bio, credit and source URL of a NASA astronaut, filled by
+the [NASA import](nasa.md). It is public reference data, not health data.
 
 A `Mission` has `id`, `name`, `status` (`active` or `ended`), `started_at`,
 `ended_at` and its `crew`. A device is assigned to one crew member from
 `assigned_at` until `released_at`; every `Reading`, `Insight` and `Event`
-carries the `crew_member_id` of the device's assignee at the moment it was
-made, or null while the device is unassigned.
+carries the `crew_member_id` of the device's assignee at the moment it was made,
+or null while the device is unassigned.
 
 ## Model runs and findings
 
 An external model reports one execution as a `ModelRun`: `model_name`,
-`model_version`, `status` (`completed`, `failed`, `unavailable`), `source`
-(the `Source` of its input), `modality` (`wearable`, `video` or `audio`),
+`model_version`, `status` (`completed`, `failed`, `unavailable`), `source` (the
+`Source` of its input), `modality` (`wearable`, `video` or `audio`),
 `crew_member_id` (null when a run covers several members), `started_at`,
 `completed_at` and its `findings`.
 
-A `Finding` has `crew_member_id`, `kind` (`activity`, `interaction`,
-`speech` or `vitals`), `label` (a `FindingLabel`: `possible_fall`,
-`abrupt_movement`, `prolonged_inactivity`, `isolation`, `interaction`,
-`explicit_distress_phrase`, `long_silence`, `frequent_interruptions`, or one
-of the wearable reason codes), `confidence` from 0 to 1, `start_s` and
-`end_s` within the run's input, `evidence` (a `description` and an optional
-`media_ref`) and `review_status` (`pending`, `confirmed` or `dismissed`).
+A `Finding` has `crew_member_id`, `kind` (`activity`, `interaction`, `speech` or
+`vitals`), `label` (a `FindingLabel`: `possible_fall`, `abrupt_movement`,
+`prolonged_inactivity`, `isolation`, `interaction`, `explicit_distress_phrase`,
+`long_silence`, `frequent_interruptions`, or one of the wearable reason codes),
+`confidence` from 0 to 1, `start_s` and `end_s` within the run's input,
+`evidence` (a `description` and an optional `media_ref`) and `review_status`
+(`pending`, `confirmed` or `dismissed`).
 
 ## Alerts and reviews
 
-An `Alert` flags a pattern for the doctor: `crew_member_id`, `priority`
-(`low`, `medium`, `high`), `status` (`open`, `acknowledged`, `resolved`),
-`reason` and the ids of the readings, insights and findings behind it. An
-insight at `review` and a finding on a review label with confidence of at
-least 0.6 open one; an unresolved alert for the same member and reason takes
-the new evidence instead of a duplicate.
+An `Alert` flags a pattern for the doctor: `crew_member_id`, `priority` (`low`,
+`medium`, `high`), `status` (`open`, `acknowledged`, `resolved`), `reason` and
+the ids of the readings, insights and findings behind it. An insight at `review`
+and a finding on a review label with confidence of at least 0.6 open one; an
+unresolved alert for the same member and reason takes the new evidence instead
+of a duplicate.
 
-An `AlertReview` records one review: `status`, `comment`, an optional
-`action` and the `actor` (a plain string until accounts exist). Reviews are
-appended, never edited or deleted, and each one sets the alert's status.
+An `AlertReviewRequest` carries `status`, `comment` and an optional `action`. An
+`AlertReview` adds the `actor`, which is the username of the signed-in reviewer
+(see [accounts](auth.md)). Reviews are appended, never edited or deleted, and
+each one sets the alert's status.
+
+## Accounts
+
+A `User` has an `id`, `username`, `role` (`admin`, `doctor`, `astronaut` or
+`jury`), `crew_member_id` (required for `astronaut`), `active` and `created_at`.
+No payload carries a password hash. `LoginRequest` is `username` and `password`.
+`NewUser` adds `role` and `crew_member_id`. `UserPatch` changes `role`,
+`crew_member_id`, `password` or `active`; a `crew_member_id` of `null` clears
+the link.
 
 ## Assessment
 
-`GET /api/v1/crew/{id}/assessment` returns a `CrewAssessment` for one member
-and period: the `heart_rate` trend against the member's baseline, the
-`latest_insight`, the `findings` of every modality, the `alerts` still open,
-and one `signals` entry per flagged pattern with the variables that
-contributed and its data quality. It aggregates what is stored; it decides
-nothing new.
+`GET /api/v1/crew/{id}/assessment` returns a `CrewAssessment` for one member and
+period: the `heart_rate` trend against the member's baseline, the
+`latest_insight`, the `findings` of every modality, the `alerts` still open, and
+one `signals` entry per flagged pattern with the variables that contributed and
+its data quality. It aggregates what is stored; it decides nothing new.
 
 ## REST
+
+Every `/api/v1` route needs a signed-in user except login and logout.
+[Accounts](auth.md) lists who may call which route.
 
 | Route                                                          | Returns                                                                 |
 | -------------------------------------------------------------- | ----------------------------------------------------------------------- |
 | `GET /health`                                                  | `Health`: the serial link, the analysis model and storage.              |
+| `POST /api/v1/auth/login`                                      | Signs in with a `LoginRequest`; returns the `User` and sets the cookie. |
+| `POST /api/v1/auth/logout`                                     | Ends the session. 204.                                                  |
+| `GET /api/v1/auth/me`                                          | The signed-in `User`.                                                   |
+| `GET /api/v1/users`                                            | `User` list. Admin only.                                                |
+| `POST /api/v1/users`                                           | Creates a user from a `NewUser`. Admin only.                            |
+| `PATCH /api/v1/users/{id}`                                     | Changes a user from a `UserPatch`. Admin only.                          |
 | `GET /api/v1/devices`                                          | `DeviceStatus` per known device.                                        |
 | `GET /api/v1/sessions`                                         | `Session` list.                                                         |
 | `GET /api/v1/measurements/latest?device_id=`                   | The last `Reading`, or null.                                            |
 | `GET /api/v1/measurements?device_id=&start=&end=&limit=`       | `Reading` list.                                                         |
 | `GET /api/v1/insights/latest?device_id=`                       | The last `Insight`, or null.                                            |
 | `GET /api/v1/events?device_id=&limit=`                         | `Event` list.                                                           |
-| `POST /api/v1/demo/replay`                                     | Starts replaying a session; returns the new `Session`.                  |
+| `POST /api/v1/demo/replay`                                     | Starts replaying a session; returns the new `Session`. Admin only.      |
 | `GET /api/v1/crew`                                             | `CrewMember` list.                                                      |
 | `GET /api/v1/crew/{id}/photo`                                  | The profile photo of one crew member, or 404.                           |
 | `GET /api/v1/missions`                                         | `Mission` list, each with its crew.                                     |
-| `POST /api/v1/model-runs`                                      | Stores a `ModelRun` with its findings; returns it with ids.             |
+| `POST /api/v1/model-runs`                                      | Stores a `ModelRun` with its findings. Admin or lab token.              |
 | `GET /api/v1/model-runs?crew_member_id=&modality=&start=&end=` | `ModelRun` list.                                                        |
 | `PATCH /api/v1/findings/{id}`                                  | Sets a finding's `review_status` and can reassign its `crew_member_id`. |
 | `GET /api/v1/alerts?status=&crew_member_id=`                   | `Alert` list.                                                           |
-| `POST /api/v1/alerts/{id}/reviews`                             | Records a review and sets the alert's status.                           |
+| `POST /api/v1/alerts/{id}/reviews`                             | Records an `AlertReviewRequest` as the signed-in user, sets the status. |
 | `GET /api/v1/alerts/{id}/reviews`                              | The alert's review trail.                                               |
 | `GET /api/v1/crew/{id}/assessment?start=&end=`                 | `CrewAssessment` for one member and period.                             |
 
@@ -136,7 +153,8 @@ nothing new.
 
 ## WebSocket
 
-`/ws/v1/telemetry` sends JSON messages with a `type`:
+`/ws/v1/telemetry` needs the session cookie or the lab token, and sends JSON
+messages with a `type`. An astronaut receives only their own member's messages:
 
 | `type`          | Carries                                                                     |
 | --------------- | --------------------------------------------------------------------------- |
