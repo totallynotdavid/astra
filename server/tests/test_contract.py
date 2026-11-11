@@ -70,6 +70,7 @@ def test_openapi_carries_socket_and_serial_payloads() -> None:
         "insight",
         "device_status",
         "error",
+        "model_run",
     }
     assert "DeviceSample" in schemas
     assert "Reading" in schemas
