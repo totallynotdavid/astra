@@ -334,6 +334,7 @@ class NewModelRun(Model):
     source: Source
     modality: Modality
     crew_member_id: str | None = None
+    scenario: str | None = None
     started_at: AwareDatetime
     completed_at: AwareDatetime | None = None
     findings: list[NewFinding] = []
@@ -347,6 +348,7 @@ class ModelRun(Model):
     source: Source
     modality: Modality
     crew_member_id: str | None
+    scenario: str | None
     started_at: AwareDatetime
     completed_at: AwareDatetime | None
     findings: list[Finding]

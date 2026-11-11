@@ -29,7 +29,7 @@ from starlette.responses import Response
 from starlette.staticfiles import StaticFiles
 from starlette.types import Scope
 
-from astra.alerts import alert_for_finding, move_finding_alert
+from astra.alerts import alerts_for_run, move_finding_alert
 from astra.analysis import AnalyzerFactory, new_analyzer
 from astra.assessment import build_assessment
 from astra.auth import (
@@ -241,12 +241,7 @@ def api_routers(
     )
     def post_model_run(run: NewModelRun) -> ModelRun:
         stored = store.insert_model_run(run)
-        for finding in stored.findings:
-            if finding.crew_member_id is None:
-                finding = finding.model_copy(
-                    update={"crew_member_id": stored.crew_member_id}
-                )
-            alert_for_finding(store, finding, datetime.now(UTC))
+        alerts_for_run(store, stored, datetime.now(UTC))
         pipeline.publish_model_run(stored)
         return stored
 

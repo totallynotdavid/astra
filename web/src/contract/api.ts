@@ -814,6 +814,8 @@ export interface components {
       model_name: string;
       /** Model Version */
       model_version: string;
+      /** Scenario */
+      scenario: string | null;
       source: components["schemas"]["Source"];
       /**
        * Started At
@@ -877,6 +879,8 @@ export interface components {
       model_name: string;
       /** Model Version */
       model_version: string;
+      /** Scenario */
+      scenario?: string | null;
       source: components["schemas"]["Source"];
       /**
        * Started At
