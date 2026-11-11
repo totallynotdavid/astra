@@ -37,6 +37,22 @@ function Lab({ evaluation }: { evaluation: LabEvaluation }) {
         {quiet.length > 0 &&
           ` Sin hallazgos es lo esperado en ${quiet.map((scenario) => scenario.name).join(", ")}.`}
       </p>
+      {quiet.length > 0 && (
+        <p className="mt-1 text-sm text-muted">
+          {plural(evaluation.quietRuns, "ejecución", "ejecuciones")} de escenarios sin hallazgo
+          esperado. Señales falsas: {evaluation.falseSignals}.
+        </p>
+      )}
+      {evaluation.unscored > 0 && (
+        <p className="mt-1 text-sm text-muted">
+          {plural(
+            evaluation.unscored,
+            "ejecución sin escenario conocido no cuenta",
+            "ejecuciones sin escenario conocido no cuentan",
+          )}{" "}
+          para los omitidos ni las señales falsas.
+        </p>
+      )}
       {(evaluation.failed > 0 || evaluation.unavailable > 0 || evaluation.otherSource > 0) && (
         <p className="mt-1 text-sm text-muted">
           No se cuentan: {plural(evaluation.failed, "ejecución fallida", "ejecuciones fallidas")},{" "}
@@ -44,53 +60,63 @@ function Lab({ evaluation }: { evaluation: LabEvaluation }) {
           {evaluation.otherSource} de otra fuente.
         </p>
       )}
-      <table className="mt-3 w-full text-sm">
-        <caption className="sr-only">
-          Hallazgos de {labTitle[evaluation.modality]} por etiqueta, con la revisión del médico
-        </caption>
-        <thead>
-          <tr className="border-b border-border text-left text-xs text-muted">
-            <th scope="col" className="py-2 pr-3 font-normal">
-              Etiqueta
-            </th>
-            <th scope="col" className="py-2 pr-3 font-normal">
-              Escenario que la planta
-            </th>
-            <th scope="col" className="py-2 pr-3 text-right font-normal">
-              Hallazgos
-            </th>
-            <th scope="col" className="py-2 pr-3 text-right font-normal">
-              Verdaderos
-            </th>
-            <th scope="col" className="py-2 pr-3 text-right font-normal">
-              Falsos
-            </th>
-            <th scope="col" className="py-2 pr-3 text-right font-normal">
-              Sin revisar
-            </th>
-            <th scope="col" className="py-2 text-right font-normal">
-              Confirmados entre los revisados
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {evaluation.tallies.map((row) => (
-            <tr key={row.label} className="border-b border-border/50 last:border-b-0">
-              <th scope="row" className="py-2 pr-3 text-left font-normal text-text">
-                {findingLabelText[row.label]}
+      <div className="mt-3 overflow-x-auto">
+        <table className="w-full text-sm">
+          <caption className="sr-only">
+            Hallazgos de {labTitle[evaluation.modality]} por etiqueta, con la revisión del médico
+          </caption>
+          <thead>
+            <tr className="border-b border-border text-left text-xs text-muted">
+              <th scope="col" className="py-2 pr-3 font-normal">
+                Etiqueta
               </th>
-              <td className="py-2 pr-3 text-muted">
-                {row.scenarios.length > 0 ? row.scenarios.join(", ") : "Ninguno"}
-              </td>
-              <td className="py-2 pr-3 text-right tabular-nums">{row.found}</td>
-              <td className="py-2 pr-3 text-right tabular-nums">{row.confirmed}</td>
-              <td className="py-2 pr-3 text-right tabular-nums">{row.dismissed}</td>
-              <td className="py-2 pr-3 text-right tabular-nums">{row.pending}</td>
-              <td className="py-2 text-right tabular-nums">{percent(row)}</td>
+              <th scope="col" className="py-2 pr-3 font-normal">
+                Escenario que la planta
+              </th>
+              <th scope="col" className="py-2 pr-3 text-right font-normal">
+                Ejecuciones del escenario
+              </th>
+              <th scope="col" className="py-2 pr-3 text-right font-normal">
+                Omitidos
+              </th>
+              <th scope="col" className="py-2 pr-3 text-right font-normal">
+                Hallazgos
+              </th>
+              <th scope="col" className="py-2 pr-3 text-right font-normal">
+                Verdaderos
+              </th>
+              <th scope="col" className="py-2 pr-3 text-right font-normal">
+                Falsos
+              </th>
+              <th scope="col" className="py-2 pr-3 text-right font-normal">
+                Sin revisar
+              </th>
+              <th scope="col" className="py-2 text-right font-normal">
+                Confirmados entre los revisados
+              </th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {evaluation.tallies.map((row) => (
+              <tr key={row.label} className="border-b border-border/50 last:border-b-0">
+                <th scope="row" className="py-2 pr-3 text-left font-normal text-text">
+                  {findingLabelText[row.label]}
+                </th>
+                <td className="py-2 pr-3 text-muted">
+                  {row.scenarios.length > 0 ? row.scenarios.join(", ") : "Ninguno"}
+                </td>
+                <td className="py-2 pr-3 text-right tabular-nums">{row.scenarioRuns}</td>
+                <td className="py-2 pr-3 text-right tabular-nums">{row.missed}</td>
+                <td className="py-2 pr-3 text-right tabular-nums">{row.found}</td>
+                <td className="py-2 pr-3 text-right tabular-nums">{row.confirmed}</td>
+                <td className="py-2 pr-3 text-right tabular-nums">{row.dismissed}</td>
+                <td className="py-2 pr-3 text-right tabular-nums">{row.pending}</td>
+                <td className="py-2 text-right tabular-nums">{percent(row)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </Card>
   );
 }
@@ -127,9 +153,9 @@ export function Evaluation({ crew, source }: { crew: CrewState; source: AstraSou
             esperan revisión.
           </li>
           <li>
-            La ejecución no guarda el escenario que la generó. Cada hallazgo cuenta para el
-            escenario que planta su etiqueta, y no se pueden contar los patrones que el modelo no
-            vio.
+            Cada ejecución guarda el escenario simulado que la generó. Un escenario omite su
+            etiqueta cuando la ejecución no la produjo. Un hallazgo en un escenario sin hallazgo
+            esperado es una señal falsa.
           </li>
         </ul>
       </Card>

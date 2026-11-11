@@ -91,6 +91,8 @@ export function mediaOf(run: ModelRun): string | null {
 export interface LabelTally {
   label: FindingLabel;
   scenarios: string[];
+  scenarioRuns: number;
+  missed: number;
   found: number;
   confirmed: number;
   dismissed: number;
@@ -105,6 +107,9 @@ export interface LabEvaluation {
   failed: number;
   unavailable: number;
   otherSource: number;
+  quietRuns: number;
+  falseSignals: number;
+  unscored: number;
   tallies: LabelTally[];
 }
 
@@ -117,6 +122,9 @@ export function evaluate(runs: ModelRun[], modality: LabModality): LabEvaluation
     failed: 0,
     unavailable: 0,
     otherSource: 0,
+    quietRuns: 0,
+    falseSignals: 0,
+    unscored: 0,
     tallies: [],
   };
   const tallies = new Map<FindingLabel, LabelTally>();
@@ -126,6 +134,8 @@ export function evaluate(runs: ModelRun[], modality: LabModality): LabEvaluation
     const created = {
       label,
       scenarios: [],
+      scenarioRuns: 0,
+      missed: 0,
       found: 0,
       confirmed: 0,
       dismissed: 0,
@@ -157,6 +167,17 @@ export function evaluate(runs: ModelRun[], modality: LabModality): LabEvaluation
       const row = tally(finding.label);
       row.found += 1;
       row[finding.review_status] += 1;
+    }
+    const planted = labScenarios[modality].find((scenario) => scenario.name === run.scenario);
+    if (!planted) {
+      evaluation.unscored += 1;
+    } else if (planted.label === null) {
+      evaluation.quietRuns += 1;
+      evaluation.falseSignals += run.findings.length;
+    } else {
+      const row = tally(planted.label);
+      row.scenarioRuns += 1;
+      if (!run.findings.some((finding) => finding.label === planted.label)) row.missed += 1;
     }
   }
   evaluation.tallies = [...tallies.values()];
