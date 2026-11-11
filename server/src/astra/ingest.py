@@ -52,6 +52,13 @@ Clock = Callable[[], datetime]
 
 _DEVICE_ID = re.compile(r"^[a-z0-9-]+$")
 
+_SESSION_KINDS = {
+    Source.LIVE: "en vivo",
+    Source.REPLAY: "repetición",
+    Source.HISTORICAL: "histórica",
+    Source.SYNTHETIC: "simulada",
+}
+
 _STATUS_MESSAGES = {
     LinkStatus.CONNECTED: "Dispositivo conectado",
     LinkStatus.STALE: "Dispositivo sin datos recientes",
@@ -153,7 +160,7 @@ class Pipeline:
         self._model_status = ModelStatus.UNAVAILABLE
         self._lock = threading.RLock()
 
-    def ingest_line(self, line: str) -> None:
+    def ingest_line(self, line: str, source: Source = Source.LIVE) -> None:
         with self._lock:
             self._last_line_at = self._clock()
             try:
@@ -168,7 +175,7 @@ class Pipeline:
                     "La línea del dispositivo no es válida",
                 )
                 return
-            self._ingest_sample(sample, Source.LIVE)
+            self._ingest_sample(sample, source)
 
     @staticmethod
     def _line_device(line: str) -> str | None:
@@ -190,7 +197,7 @@ class Pipeline:
             session = self.store.start_session(
                 device_id=sample.device_id,
                 source=source,
-                label=f"{sample.device_id} en vivo",
+                label=f"{sample.device_id} {_SESSION_KINDS[source]}",
                 started_at=now,
             )
             device = _Device(

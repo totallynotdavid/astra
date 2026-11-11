@@ -326,8 +326,18 @@ class Store:
                 " ORDER BY created_at DESC, id DESC LIMIT 1",
                 (device_id,),
             ).fetchone()
-        if not row:
-            return None
+        return self._to_insight(row) if row else None
+
+    def session_insights(self, session_id: str) -> list[Insight]:
+        with self._lock:
+            rows = self._db.execute(
+                "SELECT * FROM insights WHERE session_id = ? ORDER BY id",
+                (session_id,),
+            ).fetchall()
+        return [self._to_insight(row) for row in rows]
+
+    @staticmethod
+    def _to_insight(row: sqlite3.Row) -> Insight:
         return Insight(
             schema_version=SCHEMA_VERSION,
             session_id=row["session_id"],

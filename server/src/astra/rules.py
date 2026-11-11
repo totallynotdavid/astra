@@ -4,7 +4,6 @@ Every threshold is a signal for a person to review, not a clinical limit.
 docs/rules.md documents each reason code.
 """
 
-from datetime import UTC, datetime
 from enum import Enum, auto
 from statistics import median
 from typing import Final
@@ -150,7 +149,7 @@ class Rules:
             session_id=reading.session_id,
             device_id=reading.device_id,
             seq=reading.seq,
-            created_at=datetime.now(UTC),
+            created_at=reading.received_at,
             risk_level=risk,
             method=Method.RULES,
             version=RULES_VERSION,
