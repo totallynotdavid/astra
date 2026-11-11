@@ -1,6 +1,7 @@
 import { createApiSource } from "./api";
 import { createFixtureSource, scenarios, type Scenario } from "./fixture";
 import type { AstraSource } from "./source";
+import { createStaticSource } from "./static";
 
 declare global {
   interface ImportMetaEnv {
@@ -18,5 +19,6 @@ export function selectSource(search = location.search): AstraSource {
       : "live";
     return createFixtureSource(valid);
   }
+  if (requested === "static") return createStaticSource();
   return createApiSource();
 }

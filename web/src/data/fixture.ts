@@ -204,6 +204,8 @@ export function createFixtureSource(scenario: Scenario): AstraSource {
 
   return {
     name: "fixture",
+    speeds: [0.5, 1, 2, 5, 10],
+    replayOnly: false,
     start(sink: Sink) {
       activeSink = sink;
       const now = Date.now();
