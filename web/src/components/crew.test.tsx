@@ -151,7 +151,15 @@ describe("alert list", () => {
       findings: {},
     });
     const source = { crew: api() } as AstraSource;
-    render(<Alerts crew={store.getSnapshot()} store={store} source={source} memberFilter={null} />);
+    render(
+      <Alerts
+        crew={store.getSnapshot()}
+        store={store}
+        source={source}
+        memberFilter={null}
+        reviewer="Diego"
+      />,
+    );
     expect(screen.getAllByText("Registrar revisión", { selector: "h3" })).toHaveLength(2);
     fireEvent.change(screen.getByLabelText("Filtrar por persona"), {
       target: { value: screen.getByRole("option", { name: "Sin asignar" }).getAttribute("value") },
@@ -176,7 +184,15 @@ describe("alert list", () => {
     let trail: (typeof remote)[] = [];
     const source = { crew: api({ reviews: vi.fn(async () => trail) }) } as AstraSource;
     function Connected() {
-      return <Alerts crew={useCrew(store)} store={store} source={source} memberFilter={null} />;
+      return (
+        <Alerts
+          crew={useCrew(store)}
+          store={store}
+          source={source}
+          memberFilter={null}
+          reviewer="Diego"
+        />
+      );
     }
     render(<Connected />);
     await waitFor(() => expect(source.crew?.reviews).toHaveBeenCalledTimes(1));
@@ -209,7 +225,6 @@ describe("overlapping requests", () => {
       status: "acknowledged",
       comment: posted.comment,
       action: null,
-      actor: posted.actor,
     });
     resolveTrail([]);
     await fetching;
@@ -265,8 +280,17 @@ describe("alert review", () => {
       7,
     );
     render(
-      <AlertCard alert={alert} member={member} members={[member]} store={store} api={api()} />,
+      <AlertCard
+        alert={alert}
+        member={member}
+        members={[member]}
+        store={store}
+        api={api()}
+        reviewer={null}
+      />,
     );
+    expect(screen.queryByText("Registrar revisión", { selector: "h3" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Confirmar" })).toBeNull();
     expect(screen.getByText("Patrón de posible caída")).toBeTruthy();
     expect(screen.getByText("Silencio prolongado")).toBeTruthy();
     expect(screen.getByText("82%".replace("82", "confianza 82"))).toBeTruthy();
@@ -293,9 +317,11 @@ describe("alert review", () => {
         members={[member]}
         store={store}
         api={api({ postReview })}
+        reviewer="Diego"
       />,
     );
-    fireEvent.change(screen.getByLabelText("Quién revisa"), { target: { value: "Diego" } });
+    expect(screen.getByText("Se registra a nombre de Diego.")).toBeTruthy();
+    expect(screen.queryByLabelText("Quién revisa")).toBeNull();
     fireEvent.change(screen.getByLabelText("Comentario"), {
       target: { value: "Se confirmó con la persona" },
     });
@@ -309,7 +335,6 @@ describe("alert review", () => {
       status: "acknowledged",
       comment: "Se confirmó con la persona",
       action: "Revisión visual",
-      actor: "Diego",
     });
     await waitFor(() => screen.getByText("Historial de revisiones"));
     expect(screen.getAllByText("Reconocida").length).toBeGreaterThan(0);

@@ -65,7 +65,7 @@ class FakeSocket {
   static last: FakeSocket | null = null;
   onopen: (() => void) | null = null;
   onmessage: ((event: { data: unknown }) => void) | null = null;
-  onclose: (() => void) | null = null;
+  onclose: ((event: { code: number }) => void) | null = null;
   constructor(public url: string) {
     FakeSocket.last = this;
   }
@@ -190,5 +190,38 @@ describe("api source", () => {
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(eventsFetchCount(fetchMock)).toBe(before);
     expect(sink.syncEvents).not.toHaveBeenCalled();
+  });
+});
+
+describe("session end", () => {
+  it("tells the app when the server answers 401", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("{}", { status: 401 })),
+    );
+    vi.stubGlobal("WebSocket", FakeSocket);
+    const ended = vi.fn();
+    const sink = makeSink();
+    await createApiSource(ended).start(sink);
+    expect(ended).toHaveBeenCalled();
+    expect(sink.fail).toHaveBeenCalledWith(expect.stringContaining("La sesión terminó"));
+  });
+
+  it("does not reconnect a socket the server closed for lack of a session", async () => {
+    const ended = vi.fn();
+    stubNetwork();
+    const source = createApiSource(ended);
+    await source.start(makeSink());
+    const ws = FakeSocket.last!;
+    FakeSocket.last = null;
+    vi.useFakeTimers();
+    try {
+      ws.onclose?.({ code: 1008 });
+      vi.advanceTimersByTime(60_000);
+    } finally {
+      vi.useRealTimers();
+    }
+    expect(ended).toHaveBeenCalledOnce();
+    expect(FakeSocket.last).toBeNull();
   });
 });
