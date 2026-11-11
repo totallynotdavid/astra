@@ -3,7 +3,15 @@ import { EmptyView, ErrorView, LoadingView } from "../components/StateView";
 import type { CrewState } from "../data/crew";
 import type { DashboardState } from "../data/store";
 
-export function Crew({ state, crew }: { state: DashboardState; crew: CrewState }) {
+export function Crew({
+  state,
+  crew,
+  recorded = false,
+}: {
+  state: DashboardState;
+  crew: CrewState;
+  recorded?: boolean;
+}) {
   if (crew.phase === "error") {
     return <ErrorView message={crew.error ?? "No se pudo cargar la tripulación."} />;
   }
@@ -28,6 +36,7 @@ export function Crew({ state, crew }: { state: DashboardState; crew: CrewState }
             link={link}
             device={device}
             alerts={crew.alerts}
+            recorded={recorded}
           />
         );
       })}

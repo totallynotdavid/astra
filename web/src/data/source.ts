@@ -40,6 +40,15 @@ export interface FindingRef {
   model_name: string;
 }
 
+export interface Mission {
+  mission: components["schemas"]["Mission"];
+  latest: Record<string, { device_id: string; reading: Reading }>;
+  alerts: Alert[];
+  reviews: Record<string, AlertReview[]>;
+  runs: ModelRun[];
+  assessments: Record<string, CrewAssessment>;
+}
+
 export interface CrewSnapshot {
   members: CrewMember[];
   alerts: Alert[];

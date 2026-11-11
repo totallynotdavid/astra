@@ -190,9 +190,10 @@ export function CrewMemberScreen({
 
   const assessment = entry?.assessment ?? null;
   const readings = entry?.readings ?? [];
+  const chartEnd = source.replayOnly && assessment ? Date.parse(assessment.end) : now;
   const chartMs = Math.min(
     CHART_WINDOW_MS,
-    Math.max(60_000, now - Date.parse(assessment?.start ?? new Date(now).toISOString())),
+    Math.max(60_000, chartEnd - Date.parse(assessment?.start ?? new Date(chartEnd).toISOString())),
   );
   const modalities = [...new Set(assessment?.findings.map((f) => f.modality) ?? [])];
 
@@ -209,23 +210,27 @@ export function CrewMemberScreen({
             {device ? (
               <LinkPill status={device} />
             ) : (
-              <Badge variant="neutral">Sin dispositivo</Badge>
+              <Badge variant="neutral">
+                {source.replayOnly && deviceId ? "Grabación" : "Sin dispositivo"}
+              </Badge>
             )}
-            <label className="flex items-center gap-2 text-sm text-muted">
-              Periodo
-              <select
-                aria-label="Periodo de la evaluación"
-                className="h-10 rounded-sm border border-border-strong bg-raised px-3 text-base text-text"
-                value={period}
-                onChange={(e) => setPeriod(e.target.value as typeof period)}
-              >
-                {periods.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+            {!source.replayOnly && (
+              <label className="flex items-center gap-2 text-sm text-muted">
+                Periodo
+                <select
+                  aria-label="Periodo de la evaluación"
+                  className="h-10 rounded-sm border border-border-strong bg-raised px-3 text-base text-text"
+                  value={period}
+                  onChange={(e) => setPeriod(e.target.value as typeof period)}
+                >
+                  {periods.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
           </div>
         </div>
       </Card>
@@ -308,7 +313,7 @@ export function CrewMemberScreen({
             title="Frecuencia cardíaca"
             measurement="heart_rate_bpm"
             readings={readings}
-            now={now}
+            now={chartEnd}
             baseline={assessment.heart_rate.baseline_bpm}
             windowMs={chartMs}
           />

@@ -53,11 +53,13 @@ export function CrewCard({
   link,
   device,
   alerts,
+  recorded = false,
 }: {
   member: CrewMember;
   link: MemberLink | undefined;
   device: DeviceStatus | null;
   alerts: Alert[];
+  recorded?: boolean;
 }) {
   const open = pendingAlerts(alerts, member.id);
   const top = highestPriority(open);
@@ -77,7 +79,7 @@ export function CrewCard({
         ) : (
           <Badge variant="neutral">
             <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-faint" />
-            Sin dispositivo
+            {recorded && link?.deviceId ? "Grabación" : "Sin dispositivo"}
           </Badge>
         )}
       </div>
