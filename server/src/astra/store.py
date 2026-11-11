@@ -43,6 +43,8 @@ from astra.contract import (
     Session,
     Severity,
     Source,
+    User,
+    UserRole,
 )
 
 _SCHEMA = """
@@ -200,9 +202,25 @@ CREATE TABLE IF NOT EXISTS nasa_imports (
     status TEXT NOT NULL,
     detail TEXT
 );
+CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    username TEXT NOT NULL UNIQUE,
+    role TEXT NOT NULL,
+    crew_member_id TEXT,
+    password_hash TEXT NOT NULL,
+    active INTEGER NOT NULL,
+    created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS auth_sessions (
+    token_hash TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    expires_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS auth_sessions_user ON auth_sessions (user_id);
 """
 
-_DB_SCHEMA_VERSION = "3"
+_DB_SCHEMA_VERSION = "4"
 
 _MEASUREMENT_COLUMNS = (
     "heart_rate_bpm",
@@ -225,6 +243,10 @@ class NasaImport:
     response_bytes: int | None
     status: str
     detail: str | None = None
+
+
+class UsernameTaken(Exception):
+    """A user with this username already exists."""
 
 
 def _stamp(at: datetime) -> str:
@@ -603,13 +625,20 @@ class Store:
             message=message,
         )
 
-    def events(self, device_id: str | None, limit: int) -> list[Event]:
-        if device_id is None:
-            query = "SELECT * FROM events ORDER BY id DESC LIMIT ?"
-            params: list[object] = [limit]
-        else:
-            query = "SELECT * FROM events WHERE device_id = ? ORDER BY id DESC LIMIT ?"
-            params = [device_id, limit]
+    def events(
+        self, device_id: str | None, limit: int, crew_member_id: str | None = None
+    ) -> list[Event]:
+        clauses: list[str] = []
+        params: list[object] = []
+        if device_id is not None:
+            clauses.append("device_id = ?")
+            params.append(device_id)
+        if crew_member_id is not None:
+            clauses.append("crew_member_id = ?")
+            params.append(crew_member_id)
+        where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
+        query = f"SELECT * FROM events{where} ORDER BY id DESC LIMIT ?"
+        params.append(limit)
         with self._lock:
             rows = self._db.execute(query, params).fetchall()
         return [
@@ -1196,3 +1225,101 @@ class Store:
             )
             for row in rows
         ]
+
+    def insert_user(self, user: User, password_hash: str) -> None:
+        try:
+            with self._lock, self._db:
+                self._db.execute(
+                    "INSERT INTO users (id, username, role, crew_member_id,"
+                    " password_hash, active, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        user.id,
+                        user.username,
+                        user.role.value,
+                        user.crew_member_id,
+                        password_hash,
+                        int(user.active),
+                        _stamp(user.created_at),
+                    ),
+                )
+        except sqlite3.IntegrityError as error:
+            raise UsernameTaken(user.username) from error
+
+    def update_user(self, user: User, password_hash: str | None) -> None:
+        with self._lock, self._db:
+            self._db.execute(
+                "UPDATE users SET role = ?, crew_member_id = ?, active = ?"
+                " WHERE id = ?",
+                (user.role.value, user.crew_member_id, int(user.active), user.id),
+            )
+            if password_hash is not None:
+                self._db.execute(
+                    "UPDATE users SET password_hash = ? WHERE id = ?",
+                    (password_hash, user.id),
+                )
+
+    def user(self, user_id: str) -> User | None:
+        with self._lock:
+            row = self._db.execute(
+                "SELECT * FROM users WHERE id = ?", (user_id,)
+            ).fetchone()
+        return self._to_user(row) if row else None
+
+    def users(self) -> list[User]:
+        with self._lock:
+            rows = self._db.execute(
+                "SELECT * FROM users ORDER BY created_at, username"
+            ).fetchall()
+        return [self._to_user(row) for row in rows]
+
+    def user_credentials(self, username: str) -> tuple[User, str] | None:
+        with self._lock:
+            row = self._db.execute(
+                "SELECT * FROM users WHERE username = ?", (username,)
+            ).fetchone()
+        return (self._to_user(row), row["password_hash"]) if row else None
+
+    @staticmethod
+    def _to_user(row: sqlite3.Row) -> User:
+        return User(
+            id=row["id"],
+            username=row["username"],
+            role=UserRole(row["role"]),
+            crew_member_id=row["crew_member_id"],
+            active=bool(row["active"]),
+            created_at=_parse(row["created_at"]),
+        )
+
+    def insert_auth_session(
+        self, token_hash: str, user_id: str, created_at: datetime, expires_at: datetime
+    ) -> None:
+        with self._lock, self._db:
+            self._db.execute(
+                "DELETE FROM auth_sessions WHERE expires_at <= ?",
+                (_stamp(created_at),),
+            )
+            self._db.execute(
+                "INSERT INTO auth_sessions (token_hash, user_id, created_at,"
+                " expires_at) VALUES (?, ?, ?, ?)",
+                (token_hash, user_id, _stamp(created_at), _stamp(expires_at)),
+            )
+
+    def auth_session_user(self, token_hash: str, at: datetime) -> User | None:
+        """The user of a session that has not expired at `at`."""
+        with self._lock:
+            row = self._db.execute(
+                "SELECT u.* FROM auth_sessions s JOIN users u ON u.id = s.user_id"
+                " WHERE s.token_hash = ? AND s.expires_at > ?",
+                (token_hash, _stamp(at)),
+            ).fetchone()
+        return self._to_user(row) if row else None
+
+    def delete_auth_session(self, token_hash: str) -> None:
+        with self._lock, self._db:
+            self._db.execute(
+                "DELETE FROM auth_sessions WHERE token_hash = ?", (token_hash,)
+            )
+
+    def delete_user_sessions(self, user_id: str) -> None:
+        with self._lock, self._db:
+            self._db.execute("DELETE FROM auth_sessions WHERE user_id = ?", (user_id,))

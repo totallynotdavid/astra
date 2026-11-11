@@ -6,6 +6,7 @@ from statistics import median
 from typing import Any, cast
 
 import pytest
+from accounts import sign_in_as_admin
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -30,7 +31,7 @@ from astra.simulator import crew_lines
 def service(tmp_path: Path) -> Iterator[TestClient]:
     app = create_app(db_path=str(tmp_path / "astra.sqlite3"))
     with TestClient(app) as client:
-        yield client
+        yield sign_in_as_admin(client)
 
 
 def pipeline_of(client: TestClient) -> Pipeline:
@@ -262,7 +263,6 @@ def test_alert_reviews_are_an_immutable_trail(service: TestClient) -> None:
             "status": "acknowledged",
             "comment": "Visto, voy a revisar",
             "action": "checking telemetry",
-            "actor": "doctor",
         },
     )
     assert first.status_code == 201
@@ -271,14 +271,13 @@ def test_alert_reviews_are_an_immutable_trail(service: TestClient) -> None:
         json={
             "status": "resolved",
             "comment": "Falsa alarma, se reincorporó",
-            "actor": "doctor",
         },
     )
     assert second.status_code == 201
 
     trail = service.get(f"/api/v1/alerts/{alert['id']}/reviews").json()
     assert [r["status"] for r in trail] == ["acknowledged", "resolved"]
-    assert trail[0]["actor"] == "doctor"
+    assert [r["actor"] for r in trail] == ["admin", "admin"]
     assert trail[0]["action"] == "checking telemetry"
     current = next(
         a for a in service.get("/api/v1/alerts").json() if a["id"] == alert["id"]
@@ -288,7 +287,7 @@ def test_alert_reviews_are_an_immutable_trail(service: TestClient) -> None:
     assert (
         service.post(
             "/api/v1/alerts/9999/reviews",
-            json={"status": "acknowledged", "actor": "doctor"},
+            json={"status": "acknowledged"},
         ).status_code
         == 404
     )
@@ -384,7 +383,7 @@ def clocked(tmp_path: Path) -> Iterator[tuple[TestClient, Clock]]:
     clock = Clock()
     app = create_app(db_path=str(tmp_path / "astra.sqlite3"), clock=clock)
     with TestClient(app) as client:
-        yield client, clock
+        yield sign_in_as_admin(client), clock
 
 
 def feed_clocked(client: TestClient, clock: Clock, spec: str) -> None:
@@ -541,7 +540,7 @@ def test_a_new_pattern_after_acknowledge_opens_a_new_alert(
     assert first["status"] == "open"
     review = service.post(
         f"/api/v1/alerts/{first['id']}/reviews",
-        json={"status": "acknowledged", "comment": "revisado", "actor": "AZ-2"},
+        json={"status": "acknowledged", "comment": "revisado"},
     )
     assert review.status_code == 201
 
@@ -699,6 +698,7 @@ def test_a_phase1_database_opens_and_gains_crew_columns(tmp_path: Path) -> None:
 
     app = create_app(db_path=str(db_path))
     with TestClient(app) as client:
+        sign_in_as_admin(client)
         pipeline = pipeline_of(client)
         line = next(line for _, line in crew_lines(["normal"], 1))
         pipeline.ingest_line(line)

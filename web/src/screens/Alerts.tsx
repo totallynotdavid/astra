@@ -17,11 +17,13 @@ export function Alerts({
   store,
   source,
   memberFilter,
+  reviewer,
 }: {
   crew: CrewState;
   store: CrewStore;
   source: AstraSource;
   memberFilter: string | null;
+  reviewer: string | null;
 }) {
   const [member, setMember] = useState(memberFilter ?? "");
   const [priority, setPriority] = useState("");
@@ -108,6 +110,7 @@ export function Alerts({
             members={crew.members}
             store={store}
             api={api}
+            reviewer={reviewer}
           />
         ))
       )}

@@ -4,8 +4,9 @@ import { AppHeader } from "./components/AppHeader";
 import { ErrorView, LoadingView } from "./components/StateView";
 import type { CrewStore } from "./data/crew";
 import { useCrew } from "./data/crew";
-import type { AstraSource } from "./data/source";
+import type { AstraSource, User } from "./data/source";
 import { useDashboard, type DashboardStore } from "./data/store";
+import { canReplay, ownProfile, reviewerName } from "./lib/access";
 import { primaryDeviceId, replayPhase } from "./lib/status";
 import { Alerts } from "./screens/Alerts";
 import { Crew } from "./screens/Crew";
@@ -38,12 +39,21 @@ export function App({
   store,
   crew,
   source,
+  user,
+  onLogout,
 }: {
   store: DashboardStore;
   crew: CrewStore;
   source: AstraSource;
+  user: User;
+  onLogout: (() => void) | null;
 }) {
   const { path, params } = useHashRoute();
+  const own = ownProfile(user);
+  const redirect = own !== null && (path === "#/" || path === "#/crew") ? own : null;
+  useEffect(() => {
+    if (redirect) location.hash = redirect;
+  }, [redirect]);
   const state = useDashboard(store);
   const crewState = useCrew(crew);
   const deviceId = primaryDeviceId(state.devices, state.readings);
@@ -77,7 +87,13 @@ export function App({
     screen = <Crew state={state} crew={crewState} />;
   } else if (path === "#/alerts") {
     screen = (
-      <Alerts crew={crewState} store={crew} source={source} memberFilter={params.get("member")} />
+      <Alerts
+        crew={crewState}
+        store={crew}
+        source={source}
+        memberFilter={params.get("member")}
+        reviewer={reviewerName(user)}
+      />
     );
   } else if (path === "#/resumen") {
     screen = <Overview state={state} replay={replay} />;
@@ -85,7 +101,7 @@ export function App({
     screen = <Live state={state} />;
   } else if (path === "#/insights") {
     screen = <Insights state={state} />;
-  } else if (path === "#/replay") {
+  } else if (path === "#/replay" && canReplay(user, source.replayOnly)) {
     screen = <Replay state={state} source={source} store={store} replay={replay} />;
   } else {
     screen = <Overview state={state} replay={replay} />;
@@ -100,6 +116,8 @@ export function App({
         replayOnly={source.replayOnly}
         replay={replay}
         hasCrew={hasCrew}
+        user={user}
+        onLogout={onLogout}
       />
       <main id="main" className="mx-auto max-w-6xl p-6">
         {!science && state.phase === "ready" && state.error && (

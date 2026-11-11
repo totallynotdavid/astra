@@ -141,7 +141,6 @@ describe("CrewStore", () => {
       status: "acknowledged",
       comment: "Revisado en cabina",
       action: "Se avisó a tierra",
-      actor: "Diego",
     });
     const state = store.getSnapshot();
     expect(state.alerts[0]?.status).toBe("acknowledged");

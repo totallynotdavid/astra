@@ -7,7 +7,7 @@ types are generated from them; docs/contract.md describes each field.
 from enum import StrEnum
 from typing import Annotated, Literal
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
 SCHEMA_VERSION = "1.0"
 
@@ -392,10 +392,64 @@ class AlertReview(Model):
 
 
 class AlertReviewRequest(Model):
+    """A review. The actor is the signed-in user, never part of the request."""
+
     status: AlertStatus
     comment: str = ""
     action: str | None = None
-    actor: str
+
+
+class UserRole(StrEnum):
+    ADMIN = "admin"
+    DOCTOR = "doctor"
+    ASTRONAUT = "astronaut"
+    JURY = "jury"
+
+
+Username = Annotated[
+    str, Field(min_length=3, max_length=32, pattern=r"^[a-z0-9][a-z0-9._-]*$")
+]
+Password = Annotated[str, Field(min_length=8, max_length=128, repr=False)]
+
+
+class User(Model):
+    """A local account. The password hash never leaves the server."""
+
+    id: str
+    username: Username
+    role: UserRole
+    crew_member_id: str | None
+    active: bool
+    created_at: AwareDatetime
+
+
+class NewUser(Model):
+    username: Username
+    password: Password
+    role: UserRole
+    crew_member_id: str | None = None
+
+    @model_validator(mode="after")
+    def _astronaut_has_a_crew_member(self) -> NewUser:
+        if self.role is UserRole.ASTRONAUT and self.crew_member_id is None:
+            raise ValueError("an astronaut needs a crew_member_id")
+        return self
+
+
+class UserPatch(Model):
+    """Fields left out stay as they are. `crew_member_id: null` clears it."""
+
+    role: UserRole | None = None
+    crew_member_id: str | None = None
+    password: Annotated[str | None, Field(min_length=8, max_length=128, repr=False)] = (
+        None
+    )
+    active: bool | None = None
+
+
+class LoginRequest(Model):
+    username: Annotated[str, Field(max_length=64)]
+    password: Annotated[str, Field(max_length=128, repr=False)]
 
 
 class SignalOrigin(StrEnum):

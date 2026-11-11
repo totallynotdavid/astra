@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, cast
 
 import pytest
+from accounts import sign_in_as_admin
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from starlette.testclient import WebSocketTestSession
@@ -96,6 +97,7 @@ def board(tmp_path: Path) -> Iterator[tuple[TestClient, Clock, int, Path]]:
         clock=clock,
     )
     with TestClient(app) as client:
+        sign_in_as_admin(client)
         pipeline = pipeline_of(client)
         wait_for(
             lambda: pipeline.link_status() is LinkStatus.CONNECTED,
@@ -255,6 +257,7 @@ def test_failing_analyzer_stores_an_unavailable_insight(tmp_path: Path) -> None:
         analyzer_factory=broken,
     )
     with TestClient(app) as client:
+        sign_in_as_admin(client)
         pipeline = pipeline_of(client)
         wait_for(
             lambda: pipeline.link_status() is LinkStatus.CONNECTED,

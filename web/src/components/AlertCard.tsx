@@ -39,14 +39,14 @@ function FindingRow({
 }: {
   refData: FindingRef;
   members: CrewMember[];
-  onPatch: (patch: components["schemas"]["FindingPatch"]) => void;
+  onPatch: ((patch: components["schemas"]["FindingPatch"]) => void) | null;
 }) {
   const { finding, modality } = refData;
   const [busy, setBusy] = useState(false);
   async function run(patch: components["schemas"]["FindingPatch"]) {
     setBusy(true);
     try {
-      await onPatch(patch);
+      await onPatch?.(patch);
     } finally {
       setBusy(false);
     }
@@ -65,47 +65,49 @@ function FindingRow({
         </Badge>
       </div>
       <p className="mt-1 text-xs text-muted">{finding.evidence.description}</p>
-      <div className="mt-2 flex flex-wrap items-center gap-2">
-        {finding.review_status !== "confirmed" && (
-          <Button
-            variant="outline"
-            className="h-8 px-3 text-sm"
-            disabled={busy}
-            onClick={() => void run({ review_status: "confirmed" })}
-          >
-            Confirmar
-          </Button>
-        )}
-        {finding.review_status !== "dismissed" && (
-          <Button
-            variant="outline"
-            className="h-8 px-3 text-sm"
-            disabled={busy}
-            onClick={() => void run({ review_status: "dismissed" })}
-          >
-            Descartar
-          </Button>
-        )}
-        {modality === "audio" && (
-          <label className="flex items-center gap-2 text-xs text-muted">
-            Reasignar a
-            <select
-              aria-label="Reasignar hallazgo a otra persona"
-              className="h-8 rounded-sm border border-border-strong bg-raised px-2 text-sm text-text"
-              value={finding.crew_member_id ?? ""}
+      {onPatch && (
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          {finding.review_status !== "confirmed" && (
+            <Button
+              variant="outline"
+              className="h-8 px-3 text-sm"
               disabled={busy}
-              onChange={(e) => void run({ crew_member_id: e.target.value || null })}
+              onClick={() => void run({ review_status: "confirmed" })}
             >
-              <option value="">Sin asignar</option>
-              {members.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.code} · {m.display_name}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
-      </div>
+              Confirmar
+            </Button>
+          )}
+          {finding.review_status !== "dismissed" && (
+            <Button
+              variant="outline"
+              className="h-8 px-3 text-sm"
+              disabled={busy}
+              onClick={() => void run({ review_status: "dismissed" })}
+            >
+              Descartar
+            </Button>
+          )}
+          {modality === "audio" && (
+            <label className="flex items-center gap-2 text-xs text-muted">
+              Reasignar a
+              <select
+                aria-label="Reasignar hallazgo a otra persona"
+                className="h-8 rounded-sm border border-border-strong bg-raised px-2 text-sm text-text"
+                value={finding.crew_member_id ?? ""}
+                disabled={busy}
+                onChange={(e) => void run({ crew_member_id: e.target.value || null })}
+              >
+                <option value="">Sin asignar</option>
+                {members.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.code} · {m.display_name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+        </div>
+      )}
     </li>
   );
 }
@@ -116,12 +118,14 @@ export function AlertCard({
   members,
   store,
   api,
+  reviewer,
 }: {
   alert: Alert;
   member: CrewMember | null;
   members: CrewMember[];
   store: CrewStore;
   api: CrewApi;
+  reviewer: string | null;
 }) {
   const crew = useCrew(store);
   const live = crew.alerts.find((a) => a.id === alert.id) ?? alert;
@@ -130,7 +134,6 @@ export function AlertCard({
   const [status, setStatus] = useState<AlertStatus>(
     alert.status === "resolved" ? "resolved" : "acknowledged",
   );
-  const [actor, setActor] = useState("");
   const [comment, setComment] = useState("");
   const [action, setAction] = useState("");
   const [busy, setBusy] = useState(false);
@@ -145,7 +148,6 @@ export function AlertCard({
         status,
         comment,
         action: action || null,
-        actor,
       });
       setComment("");
       setAction("");
@@ -180,15 +182,16 @@ export function AlertCard({
               key={ref.finding.id}
               refData={ref}
               members={members}
-              onPatch={(patch) => store.patchFinding(api, ref.finding.id, patch)}
+              onPatch={reviewer ? (patch) => store.patchFinding(api, ref.finding.id, patch) : null}
             />
           ))}
         </ul>
       )}
-      <form onSubmit={(e) => void submit(e)} className="mt-3 border-t border-border pt-3">
-        <h3 className="text-sm font-medium">Registrar revisión</h3>
-        <div className="mt-2 grid gap-3 sm:grid-cols-2">
-          <div>
+      {reviewer && (
+        <form onSubmit={(e) => void submit(e)} className="mt-3 border-t border-border pt-3">
+          <h3 className="text-sm font-medium">Registrar revisión</h3>
+          <p className="mt-1 text-xs text-muted">Se registra a nombre de {reviewer}.</p>
+          <div className="mt-2">
             <label htmlFor={`status-${alert.id}`} className="mb-1 block text-sm text-muted">
               Nuevo estado
             </label>
@@ -203,51 +206,39 @@ export function AlertCard({
               <option value="resolved">Resuelta</option>
             </select>
           </div>
-          <div>
-            <label htmlFor={`actor-${alert.id}`} className="mb-1 block text-sm text-muted">
-              Quién revisa
+          <div className="mt-3">
+            <label htmlFor={`comment-${alert.id}`} className="mb-1 block text-sm text-muted">
+              Comentario
             </label>
-            <input
-              id={`actor-${alert.id}`}
-              className={inputClass}
-              value={actor}
-              onChange={(e) => setActor(e.target.value)}
+            <textarea
+              id={`comment-${alert.id}`}
+              className="min-h-16 w-full rounded-sm border border-border-strong bg-raised px-3 py-2 text-base text-text"
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
               required
             />
           </div>
-        </div>
-        <div className="mt-3">
-          <label htmlFor={`comment-${alert.id}`} className="mb-1 block text-sm text-muted">
-            Comentario
-          </label>
-          <textarea
-            id={`comment-${alert.id}`}
-            className="min-h-16 w-full rounded-sm border border-border-strong bg-raised px-3 py-2 text-base text-text"
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            required
-          />
-        </div>
-        <div className="mt-3">
-          <label htmlFor={`action-${alert.id}`} className="mb-1 block text-sm text-muted">
-            Acción tomada (opcional)
-          </label>
-          <input
-            id={`action-${alert.id}`}
-            className={inputClass}
-            value={action}
-            onChange={(e) => setAction(e.target.value)}
-          />
-        </div>
-        {error && (
-          <p role="alert" className="mt-2 text-sm text-critical">
-            {error}
-          </p>
-        )}
-        <Button type="submit" className="mt-3" disabled={busy || !actor || !comment}>
-          {busy ? "Registrando…" : "Registrar revisión"}
-        </Button>
-      </form>
+          <div className="mt-3">
+            <label htmlFor={`action-${alert.id}`} className="mb-1 block text-sm text-muted">
+              Acción tomada (opcional)
+            </label>
+            <input
+              id={`action-${alert.id}`}
+              className={inputClass}
+              value={action}
+              onChange={(e) => setAction(e.target.value)}
+            />
+          </div>
+          {error && (
+            <p role="alert" className="mt-2 text-sm text-critical">
+              {error}
+            </p>
+          )}
+          <Button type="submit" className="mt-3" disabled={busy || !comment}>
+            {busy ? "Registrando…" : "Registrar revisión"}
+          </Button>
+        </form>
+      )}
       {reviews && reviews.length > 0 && (
         <div className="mt-3 border-t border-border pt-3">
           <h3 className="text-sm font-medium">Historial de revisiones</h3>

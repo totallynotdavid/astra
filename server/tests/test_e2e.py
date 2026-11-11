@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, cast
 
 import pytest
+from accounts import sign_in_as_admin
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -170,6 +171,7 @@ def board(tmp_path: Path) -> Iterator[Board]:
         clock=clock,
     )
     with TestClient(app) as client:
+        sign_in_as_admin(client)
         wait_for(
             lambda: pipeline_of(client).link_status() is LinkStatus.CONNECTED,
             "the serial port to open",
