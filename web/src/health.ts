@@ -32,9 +32,3 @@ export function describeHealth(health: Health): HealthLine[] {
     line("Almacenamiento", storage[health.storage]),
   ];
 }
-
-export async function fetchHealth(signal?: AbortSignal): Promise<Health> {
-  const response = await fetch("/health", { signal });
-  if (!response.ok) throw new Error(`GET /health answered ${response.status}`);
-  return (await response.json()) as Health;
-}
