@@ -59,7 +59,7 @@ def test_seed_loads_the_mission_crew_and_devices(service: TestClient) -> None:
     roster = missions[0]["crew"]
     assert [m["code"] for m in roster] == ["AZ-1", "AZ-2", "AZ-3", "AZ-4"]
     assert sum(m["crew_role"] == "doctor" for m in roster) == 1
-    assert all(m["public_profile"] is None for m in roster)
+    assert all(m["public_profile"]["agency"] == "NASA" for m in roster)
     assert [m["code"] for m in crew(service)] == ["AZ-1", "AZ-2", "AZ-3", "AZ-4"]
 
     pipeline_of(service).ingest_line(
