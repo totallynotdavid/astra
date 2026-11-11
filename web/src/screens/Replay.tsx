@@ -7,26 +7,29 @@ import { SourceBadge } from "../components/SourceBadge";
 import { Button } from "../components/ui/button";
 import { Card, CardTitle } from "../components/ui/card";
 import { sourceText } from "../lib/copy";
-import { formatDateTime } from "../lib/format";
-
-const speeds = [0.5, 1, 2, 5, 10];
+import { formatDateTime, formatDuration } from "../lib/format";
+import { replayPhaseText } from "../lib/copy";
+import type { ReplayPhase } from "../lib/status";
 
 export function Replay({
   state,
   source,
   store,
+  replay,
 }: {
   state: DashboardState;
   source: AstraSource;
   store: DashboardStore;
+  replay: ReplayPhase | null;
 }) {
+  const speeds = source.speeds;
   const [sessionId, setSessionId] = useState("");
   const [speed, setSpeed] = useState(1);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const sessions = [...state.sessions].sort(
-    (a, b) => Date.parse(b.started_at) - Date.parse(a.started_at),
-  );
+  const sessions = source.replayOnly
+    ? state.sessions
+    : [...state.sessions].sort((a, b) => Date.parse(b.started_at) - Date.parse(a.started_at));
   const selected = sessionId || sessions[0]?.id || "";
 
   function start() {
@@ -35,7 +38,10 @@ export function Replay({
     setError(null);
     source
       .startReplay(selected, speed)
-      .then((session) => store.upsertSession(session))
+      .then((session) => {
+        store.upsertSession(session);
+        if (source.replayOnly) location.hash = "#/";
+      })
       .catch((e: unknown) =>
         setError(e instanceof Error ? e.message : "No se pudo iniciar la repetición."),
       )
@@ -54,8 +60,14 @@ export function Replay({
               <tr className="border-b border-border text-left text-xs text-muted">
                 <th className="pb-2 font-medium">Sesión</th>
                 <th className="pb-2 font-medium">Origen</th>
-                <th className="pb-2 font-medium">Inicio</th>
-                <th className="pb-2 font-medium">Fin</th>
+                {source.replayOnly ? (
+                  <th className="pb-2 font-medium">Duración</th>
+                ) : (
+                  <>
+                    <th className="pb-2 font-medium">Inicio</th>
+                    <th className="pb-2 font-medium">Fin</th>
+                  </>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -65,12 +77,20 @@ export function Replay({
                   <td className="py-2 pr-2">
                     <SourceBadge source={session.source} />
                   </td>
-                  <td className="py-2 pr-2 tabular-nums text-muted">
-                    {formatDateTime(session.started_at)}
-                  </td>
-                  <td className="py-2 tabular-nums text-muted">
-                    {session.ended_at ? formatDateTime(session.ended_at) : "En curso"}
-                  </td>
+                  {source.replayOnly ? (
+                    <td className="py-2 tabular-nums text-muted">
+                      {formatDuration(session.started_at, session.ended_at)}
+                    </td>
+                  ) : (
+                    <>
+                      <td className="py-2 pr-2 tabular-nums text-muted">
+                        {formatDateTime(session.started_at)}
+                      </td>
+                      <td className="py-2 tabular-nums text-muted">
+                        {session.ended_at ? formatDateTime(session.ended_at) : "En curso"}
+                      </td>
+                    </>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -129,8 +149,11 @@ export function Replay({
               {busy ? "Iniciando…" : "Iniciar repetición"}
             </Button>
             <p className="text-xs text-muted">
-              La repetición emite las lecturas guardadas con origen Repetición.
+              {source.replayOnly
+                ? "Las lecturas conservan su origen: Simulado o Repetición. Ninguna se muestra como En vivo."
+                : "La repetición emite las lecturas guardadas con origen Repetición."}
             </p>
+            {replay && <p className="text-xs text-muted">{replayPhaseText[replay]}.</p>}
           </div>
         )}
       </Card>

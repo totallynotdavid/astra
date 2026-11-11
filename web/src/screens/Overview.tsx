@@ -9,7 +9,13 @@ import { Card, CardTitle } from "../components/ui/card";
 import { noReadingsText, ppgContactText } from "../lib/copy";
 import { formatTime } from "../lib/format";
 import { latestReading } from "../lib/series";
-import { openAlerts, primaryDeviceId, readingsFor, sourceForSession } from "../lib/status";
+import {
+  openAlerts,
+  primaryDeviceId,
+  readingsFor,
+  sourceForSession,
+  type ReplayPhase,
+} from "../lib/status";
 import { useNow } from "../lib/useNow";
 
 const toneClass: Record<Tone, string> = {
@@ -18,7 +24,7 @@ const toneClass: Record<Tone, string> = {
   critical: "text-critical",
 };
 
-export function Overview({ state }: { state: DashboardState }) {
+export function Overview({ state, replay }: { state: DashboardState; replay: ReplayPhase | null }) {
   const now = useNow(10_000);
   const deviceId = primaryDeviceId(state.devices, state.readings);
   const readings = readingsFor(state.readings, deviceId);
@@ -31,7 +37,17 @@ export function Overview({ state }: { state: DashboardState }) {
     <div className="space-y-4">
       {readings.length === 0 ? (
         <EmptyView title="Todavía no hay lecturas">
-          {noReadingsText[device?.status ?? "unknown"]}
+          {replay ? (
+            <>
+              Elige una sesión en{" "}
+              <a href="#/replay" className="text-accent-text underline">
+                Repetición
+              </a>{" "}
+              para ver cómo ASTRA analiza sus lecturas.
+            </>
+          ) : (
+            noReadingsText[device?.status ?? "unknown"]
+          )}
         </EmptyView>
       ) : (
         <div className="grid gap-4 sm:grid-cols-3">
@@ -64,12 +80,12 @@ export function Overview({ state }: { state: DashboardState }) {
       <div className="grid gap-4 lg:grid-cols-2">
         <Card className="p-4">
           <div className="flex items-center justify-between gap-2">
-            <CardTitle>Enlace del dispositivo</CardTitle>
-            <LinkPill status={device} />
+            <CardTitle>{replay ? "Estado de la repetición" : "Enlace del dispositivo"}</CardTitle>
+            <LinkPill status={device} replay={replay} />
           </div>
           <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-sm">
             <dt className="text-muted">Dispositivo</dt>
-            <dd className="tabular-nums">{device?.device_id ?? "Desconocido"}</dd>
+            <dd className="tabular-nums">{deviceId ?? "Desconocido"}</dd>
             <dt className="text-muted">Última lectura</dt>
             <dd className="tabular-nums">
               {formatTime(device?.last_seen_at ?? latest?.received_at ?? null)}

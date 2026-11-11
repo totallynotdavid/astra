@@ -23,6 +23,14 @@ export function formatDateTime(iso: string | null): string {
   return Number.isNaN(t) ? "Sin registro" : dateTimeFormat.format(t);
 }
 
+export function formatDuration(startIso: string, endIso: string | null): string {
+  if (!endIso) return "En curso";
+  const seconds = Math.round((Date.parse(endIso) - Date.parse(startIso)) / 1000);
+  if (Number.isNaN(seconds)) return "Sin registro";
+  const minutes = Math.floor(seconds / 60);
+  return minutes > 0 ? `${minutes} min ${seconds % 60} s` : `${seconds} s`;
+}
+
 export function formatValue(value: number | null, digits = 0): string {
   if (value === null) return "Sin dato";
   return value.toFixed(digits);
