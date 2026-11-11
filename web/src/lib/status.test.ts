@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { components } from "../contract/api";
-import { cardBadges, linkView, openAlerts, readingFreshness } from "./status";
+import { cardBadges, linkView, openAlerts, readingFreshness, replayPhase } from "./status";
 
 type DeviceStatus = components["schemas"]["DeviceStatus"];
 type Event = components["schemas"]["Event"];
@@ -93,6 +93,35 @@ describe("cardBadges", () => {
       outdated: false,
     });
     expect(cardBadges(device("stale"), null, "open")).toEqual({ source: null, outdated: false });
+  });
+});
+
+describe("replayPhase", () => {
+  const session = (ended_at: string | null) => ({
+    id: "fall",
+    source: "SYNTHETIC" as const,
+    label: "Patrón de caída",
+    started_at: "2026-11-13T00:00:00Z",
+    ended_at,
+  });
+  const done = "2026-11-13T00:03:00Z";
+
+  it.each([
+    { name: "no readings", sessions: [session(done)], readings: [], phase: "idle" },
+    {
+      name: "a running session",
+      sessions: [session(null)],
+      readings: [liveReading],
+      phase: "playing",
+    },
+    {
+      name: "a finished session",
+      sessions: [session(done)],
+      readings: [liveReading],
+      phase: "ended",
+    },
+  ] as const)("is $phase with $name", ({ sessions, readings, phase }) => {
+    expect(replayPhase([...sessions], [...readings])).toBe(phase);
   });
 });
 

@@ -7,13 +7,17 @@ import {
   noReadingsText,
   ppgContactText,
   reasonCodeText,
+  replayPhaseText,
   riskLevelText,
+  ruleThresholdText,
   severityText,
   sourceText,
 } from "./copy";
 
 const maps = {
   reasonCodeText,
+  ruleThresholdText,
+  replayPhaseText,
   missingReasonText,
   sourceText,
   linkStatusText,
