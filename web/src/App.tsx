@@ -1,58 +1,55 @@
 import { useEffect, useState } from "react";
 
-import type { Health } from "./contract";
-import { describeHealth, fetchHealth, type Tone } from "./health";
+import { AppHeader } from "./components/AppHeader";
+import { ErrorView, LoadingView } from "./components/StateView";
+import type { AstraSource } from "./data/source";
+import { useDashboard, type DashboardStore } from "./data/store";
+import { primaryDeviceId } from "./lib/status";
+import { Insights } from "./screens/Insights";
+import { Live } from "./screens/Live";
+import { Overview } from "./screens/Overview";
+import { Replay } from "./screens/Replay";
 
-const toneClass: Record<Tone, string> = {
-  success: "text-success",
-  review: "text-review",
-  critical: "text-critical",
-};
-
-type State =
-  | { kind: "loading" }
-  | { kind: "ready"; health: Health }
-  | { kind: "error"; message: string };
-
-export function App() {
-  const [state, setState] = useState<State>({ kind: "loading" });
-
+function useHashRoute() {
+  const [route, setRoute] = useState(() => location.hash || "#/");
   useEffect(() => {
-    const controller = new AbortController();
-    fetchHealth(controller.signal)
-      .then((health) => setState({ kind: "ready", health }))
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) return;
-        setState({ kind: "error", message: String(error) });
-      });
-    return () => controller.abort();
+    const onChange = () => setRoute(location.hash || "#/");
+    addEventListener("hashchange", onChange);
+    return () => removeEventListener("hashchange", onChange);
   }, []);
+  return route;
+}
+
+export function App({ store, source }: { store: DashboardStore; source: AstraSource }) {
+  const route = useHashRoute();
+  const state = useDashboard(store);
+  const deviceId = primaryDeviceId(state.devices, state.readings);
+  const device = state.devices.find((d) => d.device_id === deviceId) ?? null;
 
   return (
-    <main className="mx-auto max-w-3xl p-8">
-      <h1 className="text-2xl font-semibold">ASTRA</h1>
-      <p className="mt-1 text-muted">
-        Monitoreo de salud de la tripulación. Señala patrones para revisión, no diagnostica.
-      </p>
-      <section className="mt-8 rounded-panel border border-border bg-surface p-6">
-        <h2 className="text-lg font-medium">Estado del servicio</h2>
-        {state.kind === "loading" && <p className="mt-4 text-muted">Conectando con ASTRA…</p>}
-        {state.kind === "error" && (
-          <p className="mt-4 text-critical">
-            No se pudo leer el estado del servicio: {state.message}
+    <div className="min-h-screen">
+      <AppHeader route={route} device={device} channel={state.channel} />
+      <main id="main" className="mx-auto max-w-6xl p-6">
+        {state.phase === "loading" && <LoadingView />}
+        {state.phase === "error" && <ErrorView message={state.error ?? ""} />}
+        {state.phase === "ready" && state.error && (
+          <p
+            role="alert"
+            className="mb-4 rounded-sm border border-critical/40 bg-surface px-3 py-2 text-sm text-critical"
+          >
+            {state.error}
           </p>
         )}
-        {state.kind === "ready" && (
-          <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-8 gap-y-2">
-            {describeHealth(state.health).map((line) => (
-              <div key={line.label} className="contents">
-                <dt className="text-muted">{line.label}</dt>
-                <dd className={`tabular-nums ${toneClass[line.tone]}`}>{line.value}</dd>
-              </div>
-            ))}
-          </dl>
+        {state.phase === "ready" && route.startsWith("#/live") && <Live state={state} />}
+        {state.phase === "ready" && route.startsWith("#/insights") && <Insights state={state} />}
+        {state.phase === "ready" && route.startsWith("#/replay") && (
+          <Replay state={state} source={source} store={store} />
         )}
-      </section>
-    </main>
+        {state.phase === "ready" &&
+          !route.startsWith("#/live") &&
+          !route.startsWith("#/insights") &&
+          !route.startsWith("#/replay") && <Overview state={state} />}
+      </main>
+    </div>
   );
 }
