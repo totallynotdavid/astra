@@ -2,6 +2,7 @@ node_modules/
 dist/
 dist-site/
 web/public/sessions/
+web/public/crew/
 .venv/
 __pycache__/
 .mypy_cache/
