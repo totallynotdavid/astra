@@ -22,8 +22,22 @@ The API listens on `http://127.0.0.1:8000` and the dashboard on
 
 ```sh
 $ curl -s http://127.0.0.1:8000/health
-{"schema_version":"1.0","serial":"disconnected","model":"unavailable","storage":"error"}
+{"schema_version":"1.0","serial":"disconnected","model":"unavailable","storage":"ok"}
 ```
+
+Point the server at the board or the simulator with `ASTRA_SERIAL_PORT`:
+
+```sh
+ASTRA_SERIAL_PORT=/dev/ttyUSB0 mise run dev:server
+```
+
+To serve the built dashboard and the API on one port, run:
+
+```sh
+ASTRA_SERIAL_PORT=/dev/ttyUSB0 mise run demo
+```
+
+and open `http://127.0.0.1:8000`.
 
 `mise run check` runs every lint, type check, test and build. `mise tasks`
 lists the rest.
@@ -34,3 +48,5 @@ lists the rest.
   is generated.
 - [docs/contract.md](docs/contract.md): the serial line, the REST API and the
   WebSocket messages.
+- [docs/server.md](docs/server.md): the env variables, storage, ingest,
+  reconnect and replay behavior.

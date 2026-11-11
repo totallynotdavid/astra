@@ -3,13 +3,13 @@
 ASTRA's server and web app share one contract in one repository, so they
 change together.
 
-| Path | Owns |
-| --- | --- |
-| [`server/`](../server) | The contract models and the API. Python, run with uv. |
-| [`web/`](../web) | The dashboard. React, Vite and Tailwind, run with Bun. |
-| [`contract/openapi.json`](../contract/openapi.json) | The OpenAPI document generated from the server models. |
-| [`tools/contract/`](../tools/contract) | The generator that turns the OpenAPI document into web types. |
-| [`scripts/check-contract`](../scripts/check-contract) | The check that the generated files match the models. |
+| Path                                                  | Owns                                                          |
+| ----------------------------------------------------- | ------------------------------------------------------------- |
+| [`server/`](../server)                                | The contract models and the API. Python, run with uv.         |
+| [`web/`](../web)                                      | The dashboard. React, Vite and Tailwind, run with Bun.        |
+| [`contract/openapi.json`](../contract/openapi.json)   | The OpenAPI document generated from the server models.        |
+| [`tools/contract/`](../tools/contract)                | The generator that turns the OpenAPI document into web types. |
+| [`scripts/check-contract`](../scripts/check-contract) | The check that the generated files match the models.          |
 
 ## The contract
 
@@ -32,11 +32,32 @@ fails when they differ from the committed ones.
 
 ## The server
 
-[`app.py`](../server/src/astra/app.py) builds the FastAPI app. `/health`
-reports the serial link, the analysis model and storage from a
-`ServiceStatus`. The REST routes under `/api/v1` and the WebSocket at
-`/ws/v1/telemetry` are declared with their contract types; the ones not built
-yet answer 501, and the WebSocket closes with code 1013.
+[`app.py`](../server/src/astra/app.py) builds the FastAPI app and wires the
+parts in `create_app`: the store, the hub, the ingest pipeline and the
+serial reader, configured by `ASTRA_SERIAL_PORT`, `ASTRA_DB` and
+`ASTRA_WEB_DIST` ([server.md](server.md) describes them).
+
+One reading's path from the serial line to the browser:
+
+1. [`ingest.py`](../server/src/astra/ingest.py) `SerialReader` reads a JSON
+   line from the port on a thread and hands it to `Pipeline.ingest_line`.
+2. The pipeline parses the line as a `DeviceSample`, drops duplicates, opens
+   a new session when `seq` resets, and stamps `received_at`.
+3. [`store.py`](../server/src/astra/store.py) writes the `Reading` to
+   SQLite, with every measurement as a column.
+4. The session's analyzer from
+   [`analysis.py`](../server/src/astra/analysis.py) returns an `Insight`,
+   which the pipeline stores; `risk_level: review` also writes an `alert`
+   event.
+5. [`hub.py`](../server/src/astra/hub.py) fans the `telemetry`, `insight`
+   and `device_status` messages out to each WebSocket client at
+   `/ws/v1/telemetry` through a bounded per-client queue.
+6. The browser shows the reading with its `source`.
+
+A device goes `stale` after 5 s without a line and `disconnected` after
+15 s or when the port goes away; the reader reconnects when the port
+returns. `POST /api/v1/demo/replay` feeds a stored session through the same
+pipeline at `speed` times real time with `source: REPLAY`.
 
 ## The web app
 

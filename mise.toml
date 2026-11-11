@@ -20,6 +20,13 @@ run = "uv run uvicorn astra.app:create_app --factory --reload --host 127.0.0.1 -
 description = "Run the web app with a proxy to the API"
 run = "bun run --cwd web dev"
 
+[tasks.demo]
+description = "Build the web app and serve it with the API on 127.0.0.1:8000"
+run = [
+  "bun run --cwd web build",
+  "cd server && ASTRA_WEB_DIST=../web/dist uv run uvicorn astra.app:create_app --factory --host 127.0.0.1 --port 8000",
+]
+
 [tasks.generate]
 description = "Regenerate contract/openapi.json and the web types from the Pydantic models"
 run = [
