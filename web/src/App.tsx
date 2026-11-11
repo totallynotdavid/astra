@@ -2,12 +2,18 @@ import { useEffect, useState } from "react";
 
 import { AppHeader } from "./components/AppHeader";
 import { ErrorView, LoadingView } from "./components/StateView";
+import type { CrewStore } from "./data/crew";
+import { useCrew } from "./data/crew";
 import type { AstraSource } from "./data/source";
 import { useDashboard, type DashboardStore } from "./data/store";
 import { primaryDeviceId, replayPhase } from "./lib/status";
+import { Alerts } from "./screens/Alerts";
+import { Crew } from "./screens/Crew";
+import { CrewMemberScreen } from "./screens/CrewMember";
 import { Insights } from "./screens/Insights";
 import { Live } from "./screens/Live";
 import { Overview } from "./screens/Overview";
+import { Planned } from "./screens/Planned";
 import { Replay } from "./screens/Replay";
 import { Science } from "./screens/Science";
 
@@ -18,30 +24,84 @@ function useHashRoute() {
     addEventListener("hashchange", onChange);
     return () => removeEventListener("hashchange", onChange);
   }, []);
-  return route;
+  const [path = "#/", query = ""] = route.split("?");
+  return { path, params: new URLSearchParams(query) };
 }
 
-export function App({ store, source }: { store: DashboardStore; source: AstraSource }) {
-  const route = useHashRoute();
+const planned: Record<string, string> = {
+  "#/vision": "Visión",
+  "#/audio": "Audio",
+  "#/evaluacion": "Evaluación",
+};
+
+export function App({
+  store,
+  crew,
+  source,
+}: {
+  store: DashboardStore;
+  crew: CrewStore;
+  source: AstraSource;
+}) {
+  const { path, params } = useHashRoute();
   const state = useDashboard(store);
+  const crewState = useCrew(crew);
   const deviceId = primaryDeviceId(state.devices, state.readings);
   const device = state.devices.find((d) => d.device_id === deviceId) ?? null;
   const replay = source.replayOnly ? replayPhase(state.sessions, state.readings) : null;
-  const science = route.startsWith("#/science");
+  const hasCrew = crewState.members.length > 0;
+  const science = path === "#/science";
+
+  const crewMatch = path.match(/^#\/crew\/(.+)$/);
+
+  let screen = null;
+  if (science) {
+    screen = <Science replayOnly={source.replayOnly} />;
+  } else if (state.phase === "loading") {
+    screen = <LoadingView />;
+  } else if (state.phase === "error") {
+    screen = <ErrorView message={state.error ?? ""} />;
+  } else if (planned[path]) {
+    screen = <Planned name={planned[path]} />;
+  } else if (crewMatch) {
+    screen = (
+      <CrewMemberScreen
+        memberId={decodeURIComponent(crewMatch[1] ?? "")}
+        state={state}
+        crew={crewState}
+        store={crew}
+        source={source}
+      />
+    );
+  } else if (path === "#/crew" || (path === "#/" && hasCrew)) {
+    screen = <Crew state={state} crew={crewState} />;
+  } else if (path === "#/alerts") {
+    screen = (
+      <Alerts crew={crewState} store={crew} source={source} memberFilter={params.get("member")} />
+    );
+  } else if (path === "#/resumen") {
+    screen = <Overview state={state} replay={replay} />;
+  } else if (path === "#/live") {
+    screen = <Live state={state} />;
+  } else if (path === "#/insights") {
+    screen = <Insights state={state} />;
+  } else if (path === "#/replay") {
+    screen = <Replay state={state} source={source} store={store} replay={replay} />;
+  } else {
+    screen = <Overview state={state} replay={replay} />;
+  }
 
   return (
     <div className="min-h-screen">
       <AppHeader
-        route={route}
+        route={path}
         device={device}
         channel={state.channel}
         replayOnly={source.replayOnly}
         replay={replay}
+        hasCrew={hasCrew}
       />
       <main id="main" className="mx-auto max-w-6xl p-6">
-        {science && <Science replayOnly={source.replayOnly} />}
-        {!science && state.phase === "loading" && <LoadingView />}
-        {!science && state.phase === "error" && <ErrorView message={state.error ?? ""} />}
         {!science && state.phase === "ready" && state.error && (
           <p
             role="alert"
@@ -50,20 +110,7 @@ export function App({ store, source }: { store: DashboardStore; source: AstraSou
             {state.error}
           </p>
         )}
-        {!science && state.phase === "ready" && route.startsWith("#/live") && (
-          <Live state={state} />
-        )}
-        {!science && state.phase === "ready" && route.startsWith("#/insights") && (
-          <Insights state={state} />
-        )}
-        {!science && state.phase === "ready" && route.startsWith("#/replay") && (
-          <Replay state={state} source={source} store={store} replay={replay} />
-        )}
-        {!science &&
-          state.phase === "ready" &&
-          !route.startsWith("#/live") &&
-          !route.startsWith("#/insights") &&
-          !route.startsWith("#/replay") && <Overview state={state} replay={replay} />}
+        {screen}
       </main>
     </div>
   );

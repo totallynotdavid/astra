@@ -8,6 +8,13 @@ type RiskLevel = components["schemas"]["RiskLevel"];
 type Method = components["schemas"]["Method"];
 type Severity = components["schemas"]["Severity"];
 type PpgContact = components["schemas"]["PpgContact"];
+type CrewRole = components["schemas"]["CrewRole"];
+type AlertPriority = components["schemas"]["AlertPriority"];
+type AlertStatus = components["schemas"]["AlertStatus"];
+type ReviewStatus = components["schemas"]["ReviewStatus"];
+type Modality = components["schemas"]["Modality"];
+type FindingKind = components["schemas"]["FindingKind"];
+type FindingLabel = components["schemas"]["FindingLabel"];
 export type MeasurementName = keyof components["schemas"]["Measurements"];
 
 export const reasonCodeText: Record<ReasonCode, string> = {
@@ -111,3 +118,62 @@ export const measurementUnit: Record<MeasurementName, string> = {
   accel_max_m_s2: "m/s²",
   accel_mean_m_s2: "m/s²",
 };
+
+export const crewRoleText: Record<CrewRole, string> = {
+  commander: "Comandante",
+  doctor: "Médico de la misión",
+  engineer: "Ingeniero de la misión",
+  scientist: "Científico de la misión",
+};
+
+export const alertPriorityText: Record<AlertPriority, string> = {
+  low: "Baja",
+  medium: "Media",
+  high: "Alta",
+};
+
+export const alertStatusText: Record<AlertStatus, string> = {
+  open: "Abierta",
+  acknowledged: "Reconocida",
+  resolved: "Resuelta",
+};
+
+export const reviewStatusText: Record<ReviewStatus, string> = {
+  pending: "Pendiente",
+  confirmed: "Confirmado",
+  dismissed: "Descartado",
+};
+
+export const modalityText: Record<Modality, string> = {
+  wearable: "Dispositivo",
+  video: "Vídeo",
+  audio: "Audio",
+};
+
+export const findingKindText: Record<FindingKind, string> = {
+  activity: "Actividad",
+  interaction: "Interacción",
+  speech: "Voz",
+  vitals: "Constantes vitales",
+};
+
+export const findingLabelText: Record<FindingLabel, string> = {
+  possible_fall: "Posible caída",
+  abrupt_movement: "Movimiento brusco",
+  prolonged_inactivity: "Inactividad prolongada",
+  isolation: "Aislamiento",
+  interaction: "Interacción",
+  explicit_distress_phrase: "Frase de alarma explícita",
+  long_silence: "Silencio prolongado",
+  frequent_interruptions: "Interrupciones frecuentes",
+  BASELINE_PENDING: "Línea base provisional",
+  HR_ABOVE_PERSONAL_BASELINE: "Frecuencia sobre lo habitual",
+  HR_OUT_OF_RANGE: "Frecuencia fuera de rango",
+  CONTACT_TEMPERATURE_OUT_OF_RANGE: "Temperatura fuera de rango",
+  FALL_PATTERN: "Patrón de posible caída",
+  PPG_CONTACT_LOST: "Pérdida de contacto del sensor",
+};
+
+export function alertReasonText(reason: string): string {
+  return findingLabelText[reason as FindingLabel] ?? reason;
+}

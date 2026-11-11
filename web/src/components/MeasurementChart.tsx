@@ -2,6 +2,7 @@ import {
   CartesianGrid,
   Line,
   LineChart,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -10,7 +11,7 @@ import {
 
 import type { components } from "../contract/api";
 import { measurementUnit, sourceText, type MeasurementName } from "../lib/copy";
-import { splitBySource, toSeries } from "../lib/series";
+import { LIVE_WINDOW_MS, splitBySource, toSeries } from "../lib/series";
 import { SourceBadge } from "./SourceBadge";
 import { Card } from "./ui/card";
 
@@ -33,14 +34,18 @@ export function MeasurementChart({
   measurement,
   readings,
   now,
+  baseline = null,
+  windowMs = LIVE_WINDOW_MS,
 }: {
   title: string;
   measurement: MeasurementName;
   readings: Reading[];
   now: number;
+  baseline?: number | null;
+  windowMs?: number;
 }) {
   const groups = splitBySource(readings)
-    .map((group) => ({ ...group, series: toSeries(group.readings, measurement, now) }))
+    .map((group) => ({ ...group, series: toSeries(group.readings, measurement, now, windowMs) }))
     .filter((group) => group.series.length > 0);
   return (
     <Card className="p-4">
@@ -64,7 +69,7 @@ export function MeasurementChart({
       </div>
       <figure className="m-0">
         <figcaption className="sr-only">
-          Gráfica de {title.toLowerCase()} de los últimos 10 minutos.
+          Gráfica de {title.toLowerCase()} de los últimos {Math.round(windowMs / 60_000)} minutos.
         </figcaption>
         <div className="h-44">
           <ResponsiveContainer width="100%" height="100%">
@@ -83,6 +88,19 @@ export function MeasurementChart({
                 tick={{ fill: "var(--color-muted)", fontSize: 12 }}
                 stroke="var(--color-border)"
               />
+              {baseline !== null && (
+                <ReferenceLine
+                  y={baseline}
+                  stroke="var(--color-faint)"
+                  strokeDasharray="4 4"
+                  label={{
+                    value: "Línea base",
+                    fill: "var(--color-faint)",
+                    fontSize: 11,
+                    position: "insideTopRight",
+                  }}
+                />
+              )}
               <Tooltip
                 labelFormatter={(v) => new Date(Number(v)).toLocaleTimeString("es")}
                 formatter={(v, name) => [v === null ? "Sin dato" : String(v), name]}

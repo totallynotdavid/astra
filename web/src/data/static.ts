@@ -16,6 +16,7 @@ export function createStaticSource(): AstraSource {
   function publish(next: Session[]) {
     sessions = next;
     sink?.ready({ health: null, devices: [], sessions, events: [], readings: [], insights: [] });
+    sink?.syncCrew?.({ members: [], alerts: [], latest: {}, findings: {} });
   }
 
   function mark(session: Session) {
@@ -27,6 +28,7 @@ export function createStaticSource(): AstraSource {
     name: "static",
     speeds: [1, 10, 60],
     replayOnly: true,
+    crew: null,
     async start(target: Sink) {
       sink = target;
       try {

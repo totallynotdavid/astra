@@ -210,6 +210,7 @@ export function createFixtureSource(scenario: Scenario): AstraSource {
     name: "fixture",
     speeds: [0.5, 1, 2, 5, 10],
     replayOnly: false,
+    crew: null,
     start(sink: Sink) {
       activeSink = sink;
       const now = Date.now();
@@ -309,6 +310,7 @@ export function createFixtureSource(scenario: Scenario): AstraSource {
         readings,
         insights,
       });
+      sink.syncCrew?.({ members: [], alerts: [], latest: {}, findings: {} });
       sink.channel("open");
 
       if (
