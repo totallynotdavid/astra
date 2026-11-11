@@ -69,6 +69,10 @@ run = ["cd server && uv run pytest -q", "bun run --cwd web test"]
 description = "Build the web app into web/dist"
 run = "bun run --cwd web build"
 
+[tasks.site]
+description = "Export the sessions and build the static demo into web/dist-site"
+run = ["cd server && uv run python -m astra.export", "bun run --cwd web build:site"]
+
 [tasks.check]
 description = "Run every repository check without writing files"
-run = ["mise run lint", "mise run typecheck", "mise run test", "mise run build"]
+run = ["mise run lint", "mise run typecheck", "mise run test", "mise run build", "mise run site"]
