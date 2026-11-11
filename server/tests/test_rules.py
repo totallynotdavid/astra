@@ -1,11 +1,13 @@
+import subprocess
+import sys
 import threading
-import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from pathlib import Path
 
 import pytest
 
-from astra.analysis import MlModel, new_analyzer
+from astra.analysis import ML_TIMEOUT_S, MlModel, new_analyzer
 from astra.contract import (
     Insight,
     Measurements,
@@ -106,14 +108,6 @@ class Raises:
         raise RuntimeError("model failed")
 
 
-class Slow:
-    version = "test-model"
-
-    def __call__(self, reading: Reading) -> Insight:
-        time.sleep(0.5)
-        return insight_for(reading, RiskLevel.NORMAL)
-
-
 class Blocks:
     version = "test-model"
 
@@ -138,6 +132,7 @@ class Case:
     readings: list[Reading]
     expected: list[Expect]
     model: MlModel | None = field(default=None)
+    timeout_s: float = ML_TIMEOUT_S
 
 
 CASES = [
@@ -252,11 +247,24 @@ CASES = [
         readings=[
             sample(0, hr=None, temp=None, lo=None, hi=None),
             sample(1, hr=None, temp=None, lo=None, hi=None, contact=PpgContact.LOST),
-            sample(2),
+            sample(2, hr=80.0, temp=None, lo=None, hi=None, motion=True),
+            sample(
+                3,
+                hr=80.0,
+                temp=None,
+                lo=None,
+                hi=None,
+                contact=PpgContact.UNKNOWN,
+            ),
+            sample(4, hr=None, temp=None, lo=9.0, hi=None),
+            sample(5),
         ],
         expected=[
             unavailable(B),
             review(B, ReasonCode.PPG_CONTACT_LOST),
+            unavailable(B),
+            unavailable(B),
+            unavailable(B),
             pending(),
         ],
     ),
@@ -268,12 +276,12 @@ CASES = [
     ),
     Case(
         name="a slow model falls back to rules",
-        model=Slow(),
+        model=Blocks(),
         readings=calm(1),
         expected=[pending()],
     ),
     Case(
-        name="a blocked model falls back inside the bound",
+        name="a blocked model answers rules for every reading",
         model=Blocks(),
         readings=calm(2),
         expected=[pending()] * 2,
@@ -283,13 +291,14 @@ CASES = [
         model=Answers(),
         readings=calm(1),
         expected=[ml(RiskLevel.REVIEW)],
+        timeout_s=5.0,
     ),
 ]
 
 
 @pytest.mark.parametrize("case", CASES, ids=[case.name for case in CASES])
 def test_analyzer(case: Case) -> None:
-    analyzer = new_analyzer(case.model)
+    analyzer = new_analyzer(case.model, timeout_s=case.timeout_s)
 
     try:
         insights = [analyzer.analyze(reading) for reading in case.readings]
@@ -309,3 +318,22 @@ def test_analyzer(case: Case) -> None:
         assert insight.version == version
         assert set(insight.reason_codes) == codes
         assert all("—" not in line for line in insight.limitations)
+
+
+def test_process_exits_with_a_hung_model() -> None:
+    script = (
+        "import test_rules\n"
+        "from astra.analysis import new_analyzer\n"
+        "analyzer = new_analyzer(test_rules.Blocks(), timeout_s=0.01)\n"
+        "analyzer.analyze(test_rules.sample(0))\n"
+        "print('main returned')\n"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        cwd=Path(__file__).parent,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "main returned" in result.stdout
