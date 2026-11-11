@@ -1,0 +1,49 @@
+[project]
+name = "astra-vision"
+version = "0.1.0"
+description = "Pose-track analysis lab for ASTRA"
+requires-python = ">=3.14,<3.15"
+dependencies = [
+    "httpx>=0.28,<1",
+    "pydantic>=2.10,<3",
+]
+
+[project.optional-dependencies]
+camera = [
+    "mediapipe==1.2.2",
+]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.15,<2",
+    "pytest>=8.3,<10",
+    "ruff>=0.9,<1",
+]
+
+[project.scripts]
+astra-vision = "astra_vision.__main__:main"
+
+[build-system]
+requires = ["uv_build>=0.13,<0.14"]
+build-backend = "uv_build"
+
+[tool.uv]
+default-groups = ["dev"]
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "B", "I", "UP", "SIM", "RUF"]
+
+[tool.mypy]
+strict = true
+files = ["src", "tests"]
+exclude = ["src/astra_vision/server_contract.py"]
+
+[[tool.mypy.overrides]]
+module = "astra_vision.server_contract"
+ignore_errors = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
