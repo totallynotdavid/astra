@@ -106,7 +106,8 @@ def test_every_route_answers_with_its_model(service: TestClient) -> None:
         "/api/v1/insights/latest", params={"device_id": "astra-01"}
     ).json()
     Insight.model_validate(insight)
-    assert insight["risk_level"] == "unavailable"
+    assert insight["method"] == "rules"
+    assert insight["risk_level"] == "normal"
 
     events = service.get("/api/v1/events").json()
     EVENTS.validate_python(events)
