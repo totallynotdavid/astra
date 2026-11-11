@@ -124,6 +124,83 @@ describe("CrewStore", () => {
     expect(state.activity).toBe(1);
   });
 
+  it("keeps runs newest first, replaces a run seen twice and indexes their findings", () => {
+    const store = new CrewStore();
+    const run = (id: number, startedAt: string, findings: Finding[]): ModelRun => ({
+      id,
+      model_name: "voz-1",
+      model_version: "0.1",
+      status: "completed",
+      source: "SYNTHETIC",
+      modality: "audio",
+      crew_member_id: null,
+      started_at: startedAt,
+      completed_at: null,
+      findings,
+    });
+    store.syncCrew({
+      members: [member],
+      runs: [run(1, "2026-11-11T09:00:00Z", []), run(2, "2026-11-11T10:00:00Z", [finding])],
+    });
+    expect(store.getSnapshot().runs.map((r) => r.id)).toEqual([2, 1]);
+    expect(store.getSnapshot().findings[3]?.model_name).toBe("voz-1");
+
+    store.apply({ type: "model_run", model_run: run(3, "2026-11-11T11:00:00Z", []) });
+    store.apply({
+      type: "model_run",
+      model_run: run(1, "2026-11-11T09:00:00Z", [{ ...finding, id: 4 }]),
+    });
+    const state = store.getSnapshot();
+    expect(state.runs.map((r) => r.id)).toEqual([3, 2, 1]);
+    expect(state.runs[2]?.findings.map((f) => f.id)).toEqual([4]);
+  });
+
+  it("drops the findings a re-sent run no longer holds from the index", () => {
+    const store = new CrewStore();
+    const run = (findings: Finding[]): ModelRun => ({
+      id: 2,
+      model_name: "voz-1",
+      model_version: "0.1",
+      status: "completed",
+      source: "SYNTHETIC",
+      modality: "audio",
+      crew_member_id: null,
+      started_at: "2026-11-11T10:00:00Z",
+      completed_at: null,
+      findings,
+    });
+    store.syncCrew({ members: [member], runs: [run([finding, { ...finding, id: 4 }])] });
+    store.apply({ type: "model_run", model_run: run([{ ...finding, id: 4 }]) });
+    expect(Object.keys(store.getSnapshot().findings)).toEqual(["4"]);
+  });
+
+  it("carries a patched finding into its run", async () => {
+    const store = new CrewStore();
+    store.syncCrew({
+      members: [member],
+      runs: [
+        {
+          id: 2,
+          model_name: "voz-1",
+          model_version: "0.1",
+          status: "completed",
+          source: "SYNTHETIC",
+          modality: "audio",
+          crew_member_id: null,
+          started_at: "2026-11-11T10:00:00Z",
+          completed_at: null,
+          findings: [{ ...finding, crew_member_id: null }],
+        },
+      ],
+    });
+    const patched = { ...finding, crew_member_id: "m1", review_status: "dismissed" as const };
+    await store.patchFinding(api({ patchFinding: vi.fn(async () => patched) }), 3, {
+      crew_member_id: "m1",
+      review_status: "dismissed",
+    });
+    expect(store.getSnapshot().runs[0]?.findings[0]).toEqual(patched);
+  });
+
   it("records a review, sets the alert status and appends to the trail", async () => {
     const store = new CrewStore();
     store.syncCrew({ members: [member], alerts: [alert] });

@@ -108,6 +108,33 @@ describe("roles", () => {
     expect(nav().includes("Repetición")).toBe(true);
   });
 
+  it.each([
+    ["#/vision", "Sin ejecuciones de Visión"],
+    ["#/audio", "Sin ejecuciones de Audio"],
+    ["#/evaluation", "Sin ejecuciones simuladas"],
+  ] as const)("opens %s for the jury and keeps it from an astronaut", async (hash, title) => {
+    const { store, crew } = setup();
+    const source = { replayOnly: false, crew: {} } as unknown as AstraSource;
+    location.hash = hash;
+    render(
+      <App store={store} crew={crew} source={source} user={userWith("jury")} onLogout={null} />,
+    );
+    expect(screen.getByText(title)).toBeTruthy();
+    cleanup();
+
+    render(
+      <App
+        store={store}
+        crew={crew}
+        source={source}
+        user={userWith("astronaut", "m1")}
+        onLogout={null}
+      />,
+    );
+    await act(async () => {});
+    expect(screen.queryByText(title)).toBeNull();
+  });
+
   it("offers a sign out only when the server has accounts", () => {
     const { store, crew, source } = setup();
     let ended = 0;
