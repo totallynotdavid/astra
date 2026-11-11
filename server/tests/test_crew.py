@@ -173,6 +173,16 @@ def test_model_run_opens_an_alert_and_reaches_the_socket(
         if a["reason"] == "possible_fall"
     ]
     assert len(alerts) == 1
+    listed = next(
+        run
+        for run in service.get("/api/v1/model-runs").json()
+        if run["id"] == stored["id"]
+    )
+    assert [f["label"] for f in listed["findings"]] == [
+        "possible_fall",
+        "interaction",
+        "abrupt_movement",
+    ]
     assert alerts[0]["crew_member_id"] == az3["id"]
     assert alerts[0]["priority"] == "high"
     assert alerts[0]["finding_ids"] == [stored["findings"][0]["id"]]
