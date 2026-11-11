@@ -1,12 +1,12 @@
 import argparse
 import json
+import os
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, cast
-
-import httpx
+from typing import Any
 
 from astra_vision.analysis import analyze
+from astra_vision.server import Server
 from astra_vision.server_contract import Modality, ModelRunStatus, NewModelRun, Source
 from astra_vision.simulator import SCENARIOS, simulate
 from astra_vision.track import load_track
@@ -22,6 +22,8 @@ def main() -> None:
     inputs.add_argument("--camera", type=int)
     run_parser.add_argument("--server")
     run_parser.add_argument("--crew", default="")
+    run_parser.add_argument("--username", default=os.environ.get("ASTRA_USERNAME"))
+    run_parser.add_argument("--password", default=os.environ.get("ASTRA_PASSWORD"))
     run_parser.add_argument(
         "--input-source",
         choices=(Source.HISTORICAL.value, Source.REPLAY.value),
@@ -67,7 +69,13 @@ def _run(args: argparse.Namespace) -> dict[str, Any]:
             "frames": len(track.frames),
             "findings": [finding.model_dump(mode="json") for finding in findings],
         }
-    crew_ids = _crew_ids(args.server)
+    server = Server(
+        args.server,
+        token=os.environ.get("ASTRA_LAB_TOKEN"),
+        username=args.username,
+        password=args.password,
+    )
+    crew_ids = server.crew_ids() if crew_by_track else {}
     server_findings = [
         finding.model_copy(
             update={
@@ -88,13 +96,7 @@ def _run(args: argparse.Namespace) -> dict[str, Any]:
         started_at=started_at,
         completed_at=datetime.now(UTC),
     )
-    response = httpx.post(
-        f"{args.server.rstrip('/')}/api/v1/model-runs",
-        json=run.model_dump(mode="json"),
-        timeout=30,
-    )
-    response.raise_for_status()
-    return cast(dict[str, Any], response.json())
+    return server.post_run(run)
 
 
 def _parse_crew(value: str) -> dict[int, str]:
@@ -108,12 +110,6 @@ def _parse_crew(value: str) -> dict[int, str]:
             raise ValueError(f"track {parsed_track_id} is mapped more than once")
         result[parsed_track_id] = code
     return result
-
-
-def _crew_ids(server: str) -> dict[str, str]:
-    response = httpx.get(f"{server.rstrip('/')}/api/v1/crew", timeout=30)
-    response.raise_for_status()
-    return {member["code"]: member["id"] for member in response.json()}
 
 
 def _resolve_crew_id(code: str | None, crew_ids: dict[str, str]) -> str | None:

@@ -18,14 +18,22 @@ uv run --project labs/vision python -m astra_vision run --simulate fall
 ```
 
 Post a simulated scene to a running ASTRA server. The runner resolves the crew
-codes to the server's generated crew member IDs before it posts the run:
+codes to the server's generated crew member IDs before it posts the run.
+Reading the crew list needs a signed-in account, so a run with `--crew` signs
+in with `--username` and `--password` (or `ASTRA_USERNAME` and
+`ASTRA_PASSWORD`). The demo accounts are in [auth.md](auth.md#demo-accounts):
 
 ```sh
 mise run lab:vision -- run \
   --simulate fall \
   --crew AZ-1=0,AZ-2=1,AZ-3=2,AZ-4=3 \
-  --server http://127.0.0.1:8000
+  --server http://127.0.0.1:8000 \
+  --username admin --password astra-admin
 ```
+
+A run without `--crew` can post with the [lab token](auth.md#lab-token)
+instead: set `ASTRA_LAB_TOKEN` to the server's value. The token opens only
+`POST /api/v1/model-runs`, so with `--crew` it fails and names the fix.
 
 Analyze a saved track with `--input FILE`. Without `--server`, the command
 prints the findings. With `--server`, it posts the run. A track from a file is

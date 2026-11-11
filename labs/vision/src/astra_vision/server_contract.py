@@ -102,6 +102,14 @@ class LinkStatus(StrEnum):
     disconnected = "disconnected"
 
 
+class LoginRequest(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    password: constr(max_length=128) = Field(..., title="Password")
+    username: constr(max_length=64) = Field(..., title="Username")
+
+
 class Measurements(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
@@ -257,6 +265,13 @@ class StorageStatus(StrEnum):
     error = "error"
 
 
+class UserRole(StrEnum):
+    admin = "admin"
+    doctor = "doctor"
+    astronaut = "astronaut"
+    jury = "jury"
+
+
 class ValidationError(BaseModel):
     ctx: dict[str, Any] | None = Field(None, title="Context")
     input: Any | None = Field(None, title="Input")
@@ -298,7 +313,6 @@ class AlertReviewRequest(BaseModel):
         extra="forbid",
     )
     action: str | None = Field(None, title="Action")
-    actor: str = Field(..., title="Actor")
     comment: str | None = Field("", title="Comment")
     status: AlertStatus
 
@@ -497,6 +511,18 @@ class NewModelRun(BaseModel):
     status: ModelRunStatus
 
 
+class NewUser(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    crew_member_id: str | None = Field(None, title="Crew Member Id")
+    password: constr(min_length=8, max_length=128) = Field(..., title="Password")
+    role: UserRole
+    username: constr(pattern=r"^[a-z0-9][a-z0-9._-]*$", min_length=3, max_length=32) = (
+        Field(..., title="Username")
+    )
+
+
 class Reading(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
@@ -554,6 +580,32 @@ class TelemetryMessage(BaseModel):
     )
     reading: Reading
     type: Literal["telemetry"] = Field(..., title="Type")
+
+
+class User(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    active: bool = Field(..., title="Active")
+    created_at: AwareDatetime = Field(..., title="Created At")
+    crew_member_id: str | None = Field(..., title="Crew Member Id")
+    id: str = Field(..., title="Id")
+    role: UserRole
+    username: constr(pattern=r"^[a-z0-9][a-z0-9._-]*$", min_length=3, max_length=32) = (
+        Field(..., title="Username")
+    )
+
+
+class UserPatch(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    active: bool | None = Field(None, title="Active")
+    crew_member_id: str | None = Field(None, title="Crew Member Id")
+    password: constr(min_length=8, max_length=128) | None = Field(
+        None, title="Password"
+    )
+    role: UserRole | None = None
 
 
 class AssessmentFinding(BaseModel):
