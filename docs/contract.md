@@ -61,8 +61,9 @@ model is calibrated.
 
 A `CrewMember` has `id`, `code` (`AZ-1` to `AZ-4`), `display_name`,
 `crew_role` (`commander`, `doctor`, `engineer` or `scientist`) and a
-`public_profile` the NASA import fills in later: name, agency, photo, bio
-and source URL. It is public reference data, not health data.
+`public_profile`: the name, agency, photo, bio, credit and source URL of a
+NASA astronaut, filled by the [NASA import](nasa.md). It is public reference
+data, not health data.
 
 A `Mission` has `id`, `name`, `status` (`active` or `ended`), `started_at`,
 `ended_at` and its `crew`. A device is assigned to one crew member from
@@ -121,6 +122,7 @@ nothing new.
 | `GET /api/v1/events?device_id=&limit=`                         | `Event` list.                                                           |
 | `POST /api/v1/demo/replay`                                     | Starts replaying a session; returns the new `Session`.                  |
 | `GET /api/v1/crew`                                             | `CrewMember` list.                                                      |
+| `GET /api/v1/crew/{id}/photo`                                  | The profile photo of one crew member, or 404.                           |
 | `GET /api/v1/missions`                                         | `Mission` list, each with its crew.                                     |
 | `POST /api/v1/model-runs`                                      | Stores a `ModelRun` with its findings; returns it with ids.             |
 | `GET /api/v1/model-runs?crew_member_id=&modality=&start=&end=` | `ModelRun` list.                                                        |
