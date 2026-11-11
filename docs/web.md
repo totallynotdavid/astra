@@ -6,7 +6,7 @@ port 5173 with a proxy to the API.
 
 ## Screens
 
-The app has nine screens, reached from the navigation bar or directly by hash
+The app has eleven screens, reached from the navigation bar or directly by hash
 route.
 
 - **Tripulación** (`#/crew`): one card per crew member with their code, name and
@@ -42,8 +42,30 @@ route.
   confidence and evidence, the open alerts and the signals with their data
   quality. The public NASA profile, when present, sits in its own block labelled
   as public reference data, never mixed with the wearer's data.
-- **Visión**, **Audio** and **Evaluación** (`#/vision`, `#/audio`,
-  `#/evaluacion`): placeholders that state the screen comes in a later version.
+- **Visión** (`#/vision`): the video model runs, newest first. A run shows a
+  timeline per crew member of its findings (possible falls, abrupt movements,
+  inactivity, isolation and interaction), then each finding with its
+  confidence, time span and evidence. When a finding has a `media_ref` that is
+  an http or https URL, the screen plays it as the rendered overlay. Any other
+  reference is shown as text.
+- **Audio** (`#/audio`): the audio model runs, with the same timeline for
+  silences, interruptions, isolation and explicit phrases, and each finding's
+  evidence. A finding with no crew member sits under "Sin asignar", and a
+  doctor or admin assigns it to a member through `PATCH /api/v1/findings/{id}`.
+  The run carries no talk time or speech turns, so the screen cannot show the
+  share of talk time of each person and says so.
+- **Evaluación** (`#/evaluation`): for each lab, the findings of its simulated
+  runs per label, with the review outcome the doctor recorded. A finding the
+  doctor confirmed counts as true and one the doctor dismissed counts as false.
+  Each label lists the simulator scenario that plants it. A run does not store
+  its scenario, so the screen counts a finding for the scenario that plants its
+  label and cannot count a pattern the model missed. Runs from another source
+  and failed runs are counted apart. Every number is labelled as from simulated
+  input.
+
+Visión, Audio and Evaluación do not appear for an astronaut. In Visión and
+Audio the finding controls follow the rule of Alertas: only an admin or a doctor
+sees them.
 
 Every reading shows its `source`. A `REPLAY`, `HISTORICAL` or `SYNTHETIC`
 reading is labelled as such and never shown as live. The Spanish text for each
@@ -102,7 +124,9 @@ Crew state lives in a second store, `CrewStore` in
 [`web/src/data/crew.ts`](../web/src/data/crew.ts), fed by the same source and
 socket as the dashboard store. The api source loads the crew list, the alerts
 and each device's latest reading once. Telemetry messages keep each member's
-latest reading current, and `model_run` messages merge new findings. A profile
+latest reading current, and `model_run` messages merge the run and its
+findings. The store keeps every model run, newest first, and the findings index
+is built from them, so a finding reviewed on any screen changes in all of them. A profile
 reloads its assessment and the member's recent readings when a `model_run`
 arrives, when the member's alerts change and every 10 seconds. On-demand calls
 (the assessment, the readings behind the chart, the review trail, posting a

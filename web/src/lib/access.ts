@@ -20,3 +20,7 @@ export function ownProfile(user: User): string | null {
     ? `#/crew/${encodeURIComponent(user.crew_member_id)}`
     : null;
 }
+
+export function canSeeLabs(user: User): boolean {
+  return user.role !== "astronaut";
+}

@@ -31,6 +31,11 @@ export function formatDuration(startIso: string, endIso: string | null): string 
   return minutes > 0 ? `${minutes} min ${seconds % 60} s` : `${seconds} s`;
 }
 
+export function formatClock(seconds: number): string {
+  const whole = Math.max(0, Math.round(seconds));
+  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
+}
+
 export function formatValue(value: number | null, digits = 0): string {
   if (value === null) return "Sin dato";
   return value.toFixed(digits);

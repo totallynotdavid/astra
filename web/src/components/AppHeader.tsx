@@ -32,7 +32,7 @@ function links(user: User, replayOnly: boolean, hasCrew: boolean): NavLink[] {
     ...(canReplay(user, replayOnly) ? [{ hash: "#/replay", label: "Repetición" }] : []),
     { hash: "#/vision", label: "Visión" },
     { hash: "#/audio", label: "Audio" },
-    { hash: "#/evaluacion", label: "Evaluación" },
+    { hash: "#/evaluation", label: "Evaluación" },
     { hash: "#/science", label: "Ciencia y datos" },
   ];
 }

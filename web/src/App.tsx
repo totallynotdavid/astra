@@ -6,17 +6,19 @@ import type { CrewStore } from "./data/crew";
 import { useCrew } from "./data/crew";
 import type { AstraSource, User } from "./data/source";
 import { useDashboard, type DashboardStore } from "./data/store";
-import { canReplay, ownProfile, reviewerName } from "./lib/access";
+import { canReplay, canSeeLabs, ownProfile, reviewerName } from "./lib/access";
 import { primaryDeviceId, replayPhase } from "./lib/status";
 import { Alerts } from "./screens/Alerts";
+import { Audio } from "./screens/Audio";
 import { Crew } from "./screens/Crew";
 import { CrewMemberScreen } from "./screens/CrewMember";
+import { Evaluation } from "./screens/Evaluation";
 import { Insights } from "./screens/Insights";
 import { Live } from "./screens/Live";
 import { Overview } from "./screens/Overview";
-import { Planned } from "./screens/Planned";
 import { Replay } from "./screens/Replay";
 import { Science } from "./screens/Science";
+import { Vision } from "./screens/Vision";
 
 function useHashRoute() {
   const [route, setRoute] = useState(() => location.hash || "#/");
@@ -28,12 +30,6 @@ function useHashRoute() {
   const [path = "#/", query = ""] = route.split("?");
   return { path, params: new URLSearchParams(query) };
 }
-
-const planned: Record<string, string> = {
-  "#/vision": "Visión",
-  "#/audio": "Audio",
-  "#/evaluacion": "Evaluación",
-};
 
 export function App({
   store,
@@ -71,8 +67,6 @@ export function App({
     screen = <LoadingView />;
   } else if (state.phase === "error") {
     screen = <ErrorView message={state.error ?? ""} />;
-  } else if (planned[path]) {
-    screen = <Planned name={planned[path]} />;
   } else if (crewMatch) {
     screen = (
       <CrewMemberScreen
@@ -95,6 +89,12 @@ export function App({
         reviewer={reviewerName(user)}
       />
     );
+  } else if (path === "#/vision" && canSeeLabs(user)) {
+    screen = <Vision crew={crewState} store={crew} source={source} reviewer={reviewerName(user)} />;
+  } else if (path === "#/audio" && canSeeLabs(user)) {
+    screen = <Audio crew={crewState} store={crew} source={source} reviewer={reviewerName(user)} />;
+  } else if (path === "#/evaluation" && canSeeLabs(user)) {
+    screen = <Evaluation crew={crewState} source={source} />;
   } else if (path === "#/resumen") {
     screen = <Overview state={state} replay={replay} />;
   } else if (path === "#/live") {

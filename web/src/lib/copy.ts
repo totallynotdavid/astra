@@ -13,6 +13,7 @@ type AlertPriority = components["schemas"]["AlertPriority"];
 type AlertStatus = components["schemas"]["AlertStatus"];
 type ReviewStatus = components["schemas"]["ReviewStatus"];
 type Modality = components["schemas"]["Modality"];
+type ModelRunStatus = components["schemas"]["ModelRunStatus"];
 type FindingKind = components["schemas"]["FindingKind"];
 type FindingLabel = components["schemas"]["FindingLabel"];
 export type MeasurementName = keyof components["schemas"]["Measurements"];
@@ -148,6 +149,12 @@ export const modalityText: Record<Modality, string> = {
   wearable: "Dispositivo",
   video: "Vídeo",
   audio: "Audio",
+};
+
+export const runStatusText: Record<ModelRunStatus, string> = {
+  completed: "Completada",
+  failed: "Falló",
+  unavailable: "No disponible",
 };
 
 export const findingKindText: Record<FindingKind, string> = {
