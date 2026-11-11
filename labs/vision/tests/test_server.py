@@ -73,6 +73,7 @@ def test_a_signed_in_run_maps_the_track_and_is_stored(server: str) -> None:
     stored = next(run for run in runs if run.id == posted["id"])
     assert stored.modality is Modality.video
     assert stored.source is Source.SYNTHETIC
+    assert stored.scenario == "fall"
     assert [finding.label.value for finding in stored.findings] == ["possible_fall"]
     assert stored.findings[0].crew_member_id == crew["AZ-1"]
 
@@ -87,6 +88,7 @@ def test_the_lab_token_posts_a_run_without_a_crew_mapping(server: str) -> None:
     posted = json.loads(result.stdout)
     assert {f["label"] for f in posted["findings"]} == {"prolonged_inactivity"}
     assert {f["crew_member_id"] for f in posted["findings"]} == {None}
+    assert posted["scenario"] == "inactive"
 
 
 def test_the_lab_token_cannot_resolve_crew_codes(server: str) -> None:

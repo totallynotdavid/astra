@@ -7,6 +7,21 @@ the result on a dashboard that works without internet.
 
 ASTRA flags patterns for a person to review. It does not diagnose.
 
+## What it does
+
+- Shows one wearer live: heart rate, contact temperature and motion, each
+  labelled with its source.
+- Follows a crew of four, with one card per person and a profile that compares
+  their heart rate with their own baseline.
+- Opens an alert when a pattern needs a person to look, and keeps the review
+  trail of the doctor.
+- Takes findings from a vision lab and an audio lab that analyze simulated
+  input, and shows how many of them the doctor confirmed.
+- Shows a public NASA profile for each crew member, apart from their
+  measurements.
+- Signs people in with a role: admin, doctor, astronaut or jury.
+- Replays recorded sessions, and ships as a static demo that needs no server.
+
 ## Run it
 
 [mise](https://mise.jdx.dev) installs the pinned Python, uv and Bun:
@@ -50,5 +65,7 @@ lists the rest.
   WebSocket messages.
 - [docs/server.md](docs/server.md): the env variables, storage, ingest,
   reconnect and replay behavior.
-- [docs/site.md](docs/site.md): build the published demo that replays recorded
-  sessions with no server.
+- [docs/site.md](docs/site.md): build the published demo, with the crew, the lab
+  findings and the alert reviews, from static files and no server.
+- [docs/readme.md](docs/readme.md): the full manual, including the vision lab,
+  the audio lab, the NASA reference data and the accounts.

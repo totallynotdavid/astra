@@ -7,7 +7,13 @@ from typing import Any
 
 from astra_vision.analysis import analyze
 from astra_vision.server import Server
-from astra_vision.server_contract import Modality, ModelRunStatus, NewModelRun, Source
+from astra_vision.server_contract import (
+    Modality,
+    ModelRunStatus,
+    NewFinding,
+    NewModelRun,
+    Source,
+)
 from astra_vision.simulator import SCENARIOS, simulate
 from astra_vision.track import load_track
 
@@ -68,6 +74,9 @@ def _run(args: argparse.Namespace) -> dict[str, Any]:
         return {
             "frames": len(track.frames),
             "findings": [finding.model_dump(mode="json") for finding in findings],
+            "run": _new_run(
+                findings, source, args.simulate, datetime.now(UTC)
+            ).model_dump(mode="json"),
         }
     server = Server(
         args.server,
@@ -84,19 +93,29 @@ def _run(args: argparse.Namespace) -> dict[str, Any]:
         )
         for finding in findings
     ]
-    started_at = datetime.now(UTC)
-    run = NewModelRun(
+    return server.post_run(
+        _new_run(server_findings, source, args.simulate, datetime.now(UTC))
+    )
+
+
+def _new_run(
+    findings: list[NewFinding],
+    source: Source,
+    scenario: str | None,
+    started_at: datetime,
+) -> NewModelRun:
+    return NewModelRun(
         model_name="astra-vision-pose",
         model_version="0.1.0",
         status=ModelRunStatus.completed,
         source=source,
         modality=Modality.video,
         crew_member_id=None,
-        findings=server_findings,
+        scenario=scenario,
+        findings=findings,
         started_at=started_at,
         completed_at=datetime.now(UTC),
     )
-    return server.post_run(run)
 
 
 def _parse_crew(value: str) -> dict[int, str]:

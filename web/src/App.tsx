@@ -78,7 +78,7 @@ export function App({
       />
     );
   } else if (path === "#/crew" || (path === "#/" && hasCrew)) {
-    screen = <Crew state={state} crew={crewState} />;
+    screen = <Crew state={state} crew={crewState} recorded={source.replayOnly} />;
   } else if (path === "#/alerts") {
     screen = (
       <Alerts

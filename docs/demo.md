@@ -127,3 +127,20 @@ curl http://127.0.0.1:8000/health
 
 `serial` is the link state, `model` is `ready` once an insight is stored,
 `storage` is `ok` while writes succeed.
+
+## Phase 3: the crew without a server
+
+This section is not part of the `v0.1.0` run sheet above. The
+[published demo](site.md) carries the crew of four, the lab findings, the alert
+reviews and the NASA profiles in static files. It needs no board, no simulator
+and no sign-in, and the jury can only read it. Build and serve it:
+
+```sh
+mise run site
+cd web && bunx vite preview --outDir dist-site
+```
+
+Open the address it prints. Tripulación opens first. Open AZ-1 for the fall
+pattern and the possible fall the camera found, Alertas for the review trail
+on that alert, and Visión, Audio and Evaluación for the lab runs. Every value
+is labelled `SYNTHETIC`. The review trail is marked as an example.

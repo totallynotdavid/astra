@@ -75,8 +75,9 @@ or null while the device is unassigned.
 An external model reports one execution as a `ModelRun`: `model_name`,
 `model_version`, `status` (`completed`, `failed`, `unavailable`), `source` (the
 `Source` of its input), `modality` (`wearable`, `video` or `audio`),
-`crew_member_id` (null when a run covers several members), `started_at`,
-`completed_at` and its `findings`.
+`crew_member_id` (null when a run covers several members), `scenario` (the
+name of the simulated scenario that produced the input, null for any other
+input), `started_at`, `completed_at` and its `findings`.
 
 A `Finding` has `crew_member_id`, `kind` (`activity`, `interaction`, `speech` or
 `vitals`), `label` (a `FindingLabel`: `possible_fall`, `abrupt_movement`,

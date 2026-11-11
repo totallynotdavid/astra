@@ -5,7 +5,15 @@ from pathlib import Path
 import pytest
 
 from astra.contract import EventKind, ReasonCode, Source
-from astra.export import INDEX, SESSIONS_DIR, ExportedSession, export_session, main
+from astra.export import (
+    INDEX,
+    MISSION_FILE,
+    SESSIONS_DIR,
+    ExportedMission,
+    ExportedSession,
+    export_session,
+    main,
+)
 from astra.ingest import DISCONNECT_AFTER, STALE_AFTER
 
 
@@ -72,6 +80,75 @@ def test_clock_follows_uptime_and_insights_keep_the_reading_time() -> None:
     assert [i.created_at for i in exported.insights] == [
         r.received_at for r in exported.readings
     ]
+
+
+def test_cli_exports_the_mission_with_its_alerts_lab_runs_and_labelled_review(
+    tmp_path: Path,
+) -> None:
+    out, crew_out = tmp_path / "sessions", tmp_path / "crew"
+
+    main(["--out", str(out), "--crew-out", str(crew_out)])
+
+    mission = ExportedMission.model_validate_json(
+        (crew_out / MISSION_FILE).read_text(encoding="utf-8")
+    )
+    crew = {member.id: member for member in mission.mission.crew}
+    codes = {member.id: member.code for member in crew.values()}
+    assert sorted(codes.values()) == ["AZ-1", "AZ-2", "AZ-3", "AZ-4"]
+    for member in crew.values():
+        assert member.public_profile is not None
+        assert member.public_profile.photo_url is not None
+        assert (tmp_path / member.public_profile.photo_url).is_file()
+
+    assert {
+        (codes[a.crew_member_id], a.reason) for a in mission.alerts if a.crew_member_id
+    } == {
+        ("AZ-1", "FALL_PATTERN"),
+        ("AZ-4", "HR_ABOVE_PERSONAL_BASELINE"),
+        ("AZ-1", "possible_fall"),
+        ("AZ-3", "isolation"),
+        ("AZ-2", "prolonged_inactivity"),
+        ("AZ-4", "explicit_distress_phrase"),
+    }
+    assert [(run.modality.value, run.scenario) for run in mission.runs] == [
+        ("video", "normal-shift"),
+        ("video", "fall"),
+        ("video", "isolation"),
+        ("video", "inactive"),
+        ("audio", "normal-briefing"),
+        ("audio", "isolation"),
+        ("audio", "distress-phrase"),
+        ("audio", "interruptions"),
+    ]
+    assert {run.source for run in mission.runs} == {Source.SYNTHETIC}
+
+    fall = next(a for a in mission.alerts if a.reason == "FALL_PATTERN")
+    assert list(mission.reviews) == [fall.id]
+    assert [r.comment.startswith("Ejemplo") for r in mission.reviews[fall.id]] == [
+        True,
+        True,
+    ]
+
+    assert set(mission.assessments) == set(crew)
+    assessed = {
+        member_id: assessment.crew_member
+        for member_id, assessment in mission.assessments.items()
+    }
+    assert assessed == crew
+    fall_member = next(i for i, code in codes.items() if code == "AZ-1")
+    assert [
+        f.finding.label.value for f in mission.assessments[fall_member].findings
+    ] == ["possible_fall"]
+
+    for member_id, link in mission.latest.items():
+        session = ExportedSession.model_validate_json(
+            (out / f"{link.reading.session_id}.json").read_text(encoding="utf-8")
+        )
+        assert {r.crew_member_id for r in session.readings} == {member_id}
+        assert {r.source for r in session.readings} == {Source.SYNTHETIC}
+    indexed = [s["id"] for s in json.loads((out / INDEX).read_text(encoding="utf-8"))]
+    assert {f"azriel-1-astra-0{n}" for n in range(1, 5)} <= set(indexed)
+    assert {"normal", "fall", "disconnect"} <= set(indexed)
 
 
 def test_cli_writes_one_file_per_session_and_an_index(tmp_path: Path) -> None:

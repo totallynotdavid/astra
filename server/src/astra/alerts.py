@@ -14,6 +14,7 @@ from astra.contract import (
     Finding,
     FindingLabel,
     Insight,
+    ModelRun,
     Reading,
     ReasonCode,
 )
@@ -73,6 +74,13 @@ def alert_for_finding(store: Store, finding: Finding, at: datetime) -> Alert | N
         "finding",
         finding.id,
     )
+
+
+def alerts_for_run(store: Store, run: ModelRun, at: datetime) -> None:
+    for finding in run.findings:
+        if finding.crew_member_id is None:
+            finding = finding.model_copy(update={"crew_member_id": run.crew_member_id})
+        alert_for_finding(store, finding, at)
 
 
 def move_finding_alert(store: Store, finding: Finding, at: datetime) -> Alert | None:

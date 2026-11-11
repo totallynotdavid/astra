@@ -481,6 +481,7 @@ class ModelRun(BaseModel):
     modality: Modality
     model_name: str = Field(..., title="Model Name")
     model_version: str = Field(..., title="Model Version")
+    scenario: str | None = Field(..., title="Scenario")
     source: Source
     started_at: AwareDatetime = Field(..., title="Started At")
     status: ModelRunStatus
@@ -506,6 +507,7 @@ class NewModelRun(BaseModel):
     modality: Modality
     model_name: str = Field(..., title="Model Name")
     model_version: str = Field(..., title="Model Version")
+    scenario: str | None = Field(None, title="Scenario")
     source: Source
     started_at: AwareDatetime = Field(..., title="Started At")
     status: ModelRunStatus

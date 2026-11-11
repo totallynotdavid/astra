@@ -14,7 +14,13 @@ from astra_audio.segments import (
     write_conversation,
 )
 from astra_audio.server import Server
-from astra_audio.server_contract import Modality, ModelRunStatus, NewModelRun, Source
+from astra_audio.server_contract import (
+    Modality,
+    ModelRunStatus,
+    NewFinding,
+    NewModelRun,
+    Source,
+)
 from astra_audio.simulator import SCENARIOS, simulate
 
 MODEL_NAME = "astra-audio-speech"
@@ -73,7 +79,12 @@ def _run(args: argparse.Namespace) -> dict[str, Any]:
         ],
         "findings": [finding.model_dump(mode="json") for finding in findings],
     }
+    source = _source(conversation, replayed=args.segments is not None)
+    version = f"{__version__}+{conversation.diarization}"
     if args.server is None:
+        result["run"] = _new_run(
+            findings, source, version, args.simulate, started_at
+        ).model_dump(mode="json")
         return result
     server = Server(
         args.server,
@@ -90,19 +101,31 @@ def _run(args: argparse.Namespace) -> dict[str, Any]:
         )
         for finding in findings
     ]
-    run = NewModelRun(
+    result["model_run"] = server.post_run(
+        _new_run(resolved, source, version, args.simulate, started_at)
+    )
+    return result
+
+
+def _new_run(
+    findings: list[NewFinding],
+    source: Source,
+    version: str,
+    scenario: str | None,
+    started_at: datetime,
+) -> NewModelRun:
+    return NewModelRun(
         model_name=MODEL_NAME,
-        model_version=f"{__version__}+{conversation.diarization}",
+        model_version=version,
         status=ModelRunStatus.completed,
-        source=_source(conversation, replayed=args.segments is not None),
+        source=source,
         modality=Modality.audio,
         crew_member_id=None,
-        findings=resolved,
+        scenario=scenario,
+        findings=findings,
         started_at=started_at,
         completed_at=datetime.now(UTC),
     )
-    result["model_run"] = server.post_run(run)
-    return result
 
 
 def _conversation(args: argparse.Namespace) -> Conversation:

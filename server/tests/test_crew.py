@@ -127,6 +127,7 @@ def test_model_run_opens_an_alert_and_reaches_the_socket(
                 "source": "SYNTHETIC",
                 "modality": "video",
                 "crew_member_id": az3["id"],
+                "scenario": "fall",
                 "started_at": "2026-11-13T10:00:00Z",
                 "completed_at": "2026-11-13T10:05:00Z",
                 "findings": [
@@ -183,6 +184,7 @@ def test_model_run_opens_an_alert_and_reaches_the_socket(
         "interaction",
         "abrupt_movement",
     ]
+    assert stored["scenario"] == listed["scenario"] == "fall"
     assert alerts[0]["crew_member_id"] == az3["id"]
     assert alerts[0]["priority"] == "high"
     assert alerts[0]["finding_ids"] == [stored["findings"][0]["id"]]

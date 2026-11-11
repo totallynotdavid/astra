@@ -71,6 +71,10 @@ uv run python -m astra.simulator --crew normal,fall,normal,hr-above-baseline --p
 One pipeline ingests all four devices from that single pseudo-terminal;
 the real board stays `astra-01` on its own port.
 
+[`sessions/crew/`](../sessions/crew) holds one recording of a crew
+(`--crew fall,normal,normal,hr-above-baseline --seed 1`), which the
+[published demo](site.md) reads.
+
 ## Point the server at the simulator
 
 `--pty` prints the path of the pseudo-terminal, then writes the lines to it.

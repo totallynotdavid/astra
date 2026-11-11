@@ -147,6 +147,7 @@ CREATE TABLE IF NOT EXISTS model_runs (
     source TEXT NOT NULL,
     modality TEXT NOT NULL,
     crew_member_id TEXT,
+    scenario TEXT,
     started_at TEXT NOT NULL,
     completed_at TEXT
 );
@@ -220,7 +221,7 @@ CREATE TABLE IF NOT EXISTS auth_sessions (
 CREATE INDEX IF NOT EXISTS auth_sessions_user ON auth_sessions (user_id);
 """
 
-_DB_SCHEMA_VERSION = "4"
+_DB_SCHEMA_VERSION = "5"
 
 _MEASUREMENT_COLUMNS = (
     "heart_rate_bpm",
@@ -866,8 +867,8 @@ class Store:
         with self._lock, self._db:
             cursor = self._db.execute(
                 "INSERT INTO model_runs (model_name, model_version, status,"
-                " source, modality, crew_member_id, started_at, completed_at)"
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                " source, modality, crew_member_id, scenario, started_at,"
+                " completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     run.model_name,
                     run.model_version,
@@ -875,6 +876,7 @@ class Store:
                     run.source.value,
                     run.modality.value,
                     run.crew_member_id,
+                    run.scenario,
                     _stamp(run.started_at),
                     _stamp(run.completed_at) if run.completed_at else None,
                 ),
@@ -891,6 +893,7 @@ class Store:
             source=run.source,
             modality=run.modality,
             crew_member_id=run.crew_member_id,
+            scenario=run.scenario,
             started_at=run.started_at.astimezone(UTC),
             completed_at=(
                 run.completed_at.astimezone(UTC) if run.completed_at else None
@@ -1010,6 +1013,7 @@ class Store:
                 source=Source(row["source"]),
                 modality=Modality(row["modality"]),
                 crew_member_id=row["crew_member_id"],
+                scenario=row["scenario"],
                 started_at=_parse(row["started_at"]),
                 completed_at=(
                     _parse(row["completed_at"]) if row["completed_at"] else None
