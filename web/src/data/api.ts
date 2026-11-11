@@ -9,7 +9,6 @@ import type {
   CrewSnapshot,
   Finding,
   FindingPatch,
-  FindingRef,
   MemberLink,
   ModelRun,
   Session,
@@ -47,13 +46,7 @@ async function crewSnapshot(get: Get, devices: DeviceStatus[]): Promise<CrewSnap
       }
     }),
   );
-  const findings: Record<number, FindingRef> = {};
-  for (const run of runs) {
-    for (const finding of run.findings) {
-      findings[finding.id] = { finding, modality: run.modality, model_name: run.model_name };
-    }
-  }
-  return { members, alerts, latest, findings };
+  return { members, alerts, latest, runs };
 }
 
 export function createApiSource(onSessionEnd: () => void = () => {}): AstraSource {

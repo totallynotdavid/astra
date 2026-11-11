@@ -13,6 +13,7 @@ import type {
   FindingPatch,
   FindingRef,
   MemberLink,
+  ModelRun,
   Reading,
   SocketMessage,
 } from "./source";
@@ -33,6 +34,7 @@ export interface CrewState {
   alerts: Alert[];
   latest: Record<string, MemberLink>;
   findings: Record<number, FindingRef>;
+  runs: ModelRun[];
   reviews: Record<number, AlertReview[]>;
   assessments: Record<string, AssessmentEntry>;
   activity: number;
@@ -45,6 +47,7 @@ const empty: CrewState = {
   alerts: [],
   latest: {},
   findings: {},
+  runs: [],
   reviews: {},
   assessments: {},
   activity: 0,
@@ -52,6 +55,20 @@ const empty: CrewState = {
 
 export const CHART_WINDOW_MS = 2 * 3600_000;
 const CHART_LIMIT = 8000;
+
+function newestFirst(a: ModelRun, b: ModelRun): number {
+  return Date.parse(b.started_at) - Date.parse(a.started_at) || b.id - a.id;
+}
+
+function indexFindings(runs: ModelRun[]): Record<number, FindingRef> {
+  const index: Record<number, FindingRef> = {};
+  for (const run of runs) {
+    for (const finding of run.findings) {
+      index[finding.id] = { finding, modality: run.modality, model_name: run.model_name };
+    }
+  }
+  return index;
+}
 
 export function assessmentKey(memberId: string, period: string): string {
   return `${memberId}|${period}`;
@@ -83,7 +100,12 @@ export class CrewStore implements CrewSink {
     if (patch.members) next.members = patch.members;
     if (patch.alerts) next.alerts = patch.alerts;
     if (patch.latest) next.latest = { ...this.state.latest, ...patch.latest };
-    if (patch.findings) next.findings = { ...this.state.findings, ...patch.findings };
+    if (patch.runs) {
+      next.runs = [...patch.runs].sort(newestFirst);
+      next.findings = indexFindings(patch.runs);
+    }
+    if (patch.findings)
+      next.findings = { ...(next.findings ?? this.state.findings), ...patch.findings };
     this.set(next);
   }
 
@@ -101,16 +123,19 @@ export class CrewStore implements CrewSink {
         break;
       }
       case "model_run": {
-        const findings = { ...this.state.findings };
         const run = message.model_run;
-        for (const finding of run.findings) {
-          findings[finding.id] = {
-            finding,
-            modality: run.modality,
-            model_name: run.model_name,
-          };
+        const runs = [...this.state.runs.filter((known) => known.id !== run.id), run].sort(
+          newestFirst,
+        );
+        const findings = { ...this.state.findings };
+        for (const old of this.state.runs.find((known) => known.id === run.id)?.findings ?? []) {
+          delete findings[old.id];
         }
-        this.set({ findings, activity: this.state.activity + 1 });
+        this.set({
+          runs,
+          findings: { ...findings, ...indexFindings([run]) },
+          activity: this.state.activity + 1,
+        });
         break;
       }
     }
@@ -199,7 +224,12 @@ export class CrewStore implements CrewSink {
     const finding: Finding = await api.patchFinding(findingId, patch);
     const ref = this.state.findings[findingId];
     if (ref && this.latest(topic, request)) {
+      const runs = this.state.runs.map((run) => ({
+        ...run,
+        findings: run.findings.map((known) => (known.id === findingId ? finding : known)),
+      }));
       this.set({
+        runs,
         findings: { ...this.state.findings, [findingId]: { ...ref, finding } },
       });
     }

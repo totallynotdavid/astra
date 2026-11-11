@@ -44,10 +44,11 @@ export interface CrewSnapshot {
   members: CrewMember[];
   alerts: Alert[];
   latest: Record<string, MemberLink>;
-  findings: Record<number, FindingRef>;
+  runs: ModelRun[];
 }
 
 export interface CrewPatch extends Partial<CrewSnapshot> {
+  findings?: Record<number, FindingRef>;
   error?: string;
 }
 
