@@ -4,8 +4,12 @@ python = "3.15.2"
 uv = "0.13.7"
 
 [tasks.install]
-description = "Install the server and web dependencies from their lockfiles"
-run = ["bun install --frozen-lockfile", "uv sync --locked --project server"]
+description = "Install the server, vision lab and web dependencies from lockfiles"
+run = [
+  "bun install --frozen-lockfile",
+  "uv sync --locked --project server",
+  "uv sync --locked --project labs/vision --python 3.14",
+]
 
 [tasks.dev]
 description = "Run the server and the web app with reload"
@@ -47,6 +51,10 @@ depends = ["lint:*"]
 dir = "server"
 run = ["uv run ruff check --no-fix .", "uv run ruff format --check ."]
 
+[tasks."lint:vision"]
+dir = "labs/vision"
+run = ["uv run --python 3.14 ruff check .", "uv run --python 3.14 ruff format --check ."]
+
 [tasks."lint:web"]
 run = ["bun run --cwd web lint", "bunx oxfmt --check web/src web/vite.config.ts"]
 
@@ -54,16 +62,38 @@ run = ["bun run --cwd web lint", "bunx oxfmt --check web/src web/vite.config.ts"
 description = "Apply safe lint fixes and format source files"
 run = [
   "cd server && uv run ruff check --fix . && uv run ruff format .",
+  "cd labs/vision && uv run --python 3.14 ruff check --fix . && uv run --python 3.14 ruff format .",
   "bunx oxfmt web/src web/vite.config.ts",
 ]
 
 [tasks.typecheck]
-description = "Typecheck the server and the web app"
-run = ["cd server && uv run mypy", "bun run --cwd web typecheck"]
+description = "Typecheck the server, vision lab and web app"
+run = [
+  "cd server && uv run mypy",
+  "cd labs/vision && uv run --python 3.14 mypy",
+  "bun run --cwd web typecheck",
+]
 
 [tasks.test]
-description = "Run the server and web test suites"
-run = ["cd server && uv run pytest -q", "bun run --cwd web test"]
+description = "Run the server, vision lab and web test suites"
+run = [
+  "cd server && uv run pytest -q",
+  "cd labs/vision && uv run --python 3.14 pytest -q",
+  "bun run --cwd web test",
+]
+
+[tasks."lab:vision"]
+description = "Run the ASTRA vision lab"
+dir = "labs/vision"
+run = "uv run --python 3.14 python -m astra_vision"
+
+[tasks."lab:vision:generate-contract"]
+description = "Generate vision lab payload models from the server OpenAPI contract"
+dir = "labs/vision"
+run = [
+  "uvx --python 3.14 --from datamodel-code-generator==0.93.0 datamodel-codegen --input ../../contract/openapi.json --input-file-type openapi --output src/astra_vision/server_contract.py --output-model-type pydantic_v2.BaseModel --target-python-version 3.14 --disable-timestamp --formatters builtin",
+  "uv run --python 3.14 ruff format src/astra_vision/server_contract.py",
+]
 
 [tasks.build]
 description = "Build the web app into web/dist"
