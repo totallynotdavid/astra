@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import cast
 
 import pytest
+from accounts import sign_in_as_admin
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pydantic import TypeAdapter
@@ -59,7 +60,7 @@ def wait_for(condition: Callable[[], bool], what: str = "condition") -> None:
 def service(tmp_path: Path) -> Iterator[TestClient]:
     app = create_app(db_path=str(tmp_path / "astra.sqlite3"))
     with TestClient(app) as client:
-        yield client
+        yield sign_in_as_admin(client)
 
 
 def pipeline_of(client: TestClient) -> Pipeline:

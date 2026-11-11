@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from accounts import sign_in_as_admin
 from fastapi.testclient import TestClient
 
 from astra.app import create_app
@@ -62,7 +63,7 @@ class Recorded:
 @pytest.fixture
 def service(tmp_path: Path) -> Iterator[TestClient]:
     with TestClient(create_app(db_path=str(tmp_path / "astra.sqlite3"))) as client:
-        yield client
+        yield sign_in_as_admin(client)
 
 
 @pytest.mark.parametrize("entry", ENTRIES, ids=lambda e: e.crew)
