@@ -8,7 +8,22 @@ uv run python -m astra.simulator --scenario fall --seed 1
 ```
 
 ```json
-{"schema_version":"1.0","device_id":"astra-01","seq":0,"uptime_ms":1792,"sampling_rate_hz":1,"measurements":{"heart_rate_bpm":null,"contact_temperature_c":35.2,"accel_min_m_s2":9.8,"accel_max_m_s2":9.9,"accel_mean_m_s2":9.8},"quality":{"ppg_contact":"ok","motion_artifact":false},"missing":{"heart_rate_bpm":"warming_up"}}
+{
+  "schema_version": "1.0",
+  "device_id": "astra-01",
+  "seq": 0,
+  "uptime_ms": 1792,
+  "sampling_rate_hz": 1,
+  "measurements": {
+    "heart_rate_bpm": null,
+    "contact_temperature_c": 35.2,
+    "accel_min_m_s2": 9.8,
+    "accel_max_m_s2": 9.9,
+    "accel_mean_m_s2": 9.8
+  },
+  "quality": { "ppg_contact": "ok", "motion_artifact": false },
+  "missing": { "heart_rate_bpm": "warming_up" }
+}
 ```
 
 One line comes every second, paced by `uptime_ms`. The run ends with the
@@ -18,29 +33,43 @@ formats it. [`simulator.py`](../server/src/astra/simulator.py) holds the code.
 
 ## Options
 
-| Option | Meaning |
-| --- | --- |
-| `--scenario` | `normal` (default), `hr-above-baseline`, `fall`, `lost-contact` or `disconnect`. |
-| `--speed` | Times real time. Default `1`. `100000` prints a whole scenario at once. |
-| `--seed` | Makes the run repeatable. Without it each run differs. |
-| `--device-id` | The `device_id` of every line. Default `astra-01`. |
-| `--pty` | Prints to a new pseudo-terminal instead of stdout, and prints its path. |
+| Option        | Meaning                                                                                                                                                      |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--scenario`  | `normal` (default), `hr-above-baseline`, `fall`, `lost-contact` or `disconnect`.                                                                             |
+| `--crew`      | Comma-separated scenarios, one wearer each on `astra-01`, `astra-02`, ... interleaved on the same output. Cannot combine with `--scenario` or `--device-id`. |
+| `--speed`     | Times real time. Default `1`. `100000` prints a whole scenario at once.                                                                                      |
+| `--seed`      | Makes the run repeatable. Without it each run differs.                                                                                                       |
+| `--device-id` | The `device_id` of every line. Default `astra-01`.                                                                                                           |
+| `--pty`       | Prints to a new pseudo-terminal instead of stdout, and prints its path.                                                                                      |
 
 ## Scenarios
 
-| Scenario | Seconds | What happens |
-| --- | --- | --- |
-| `normal` | 180 | Resting at about 72 bpm. |
-| `hr-above-baseline` | 240 | 135 valid samples at about 72 bpm, then the heart rate rises to about 108 bpm at `seq` 140 and stays. |
-| `fall` | 180 | Resting, then an impact at `seq` 130 and a settling second, then stillness at about 90 bpm. |
-| `lost-contact` | 170 | PPG contact is lost from `seq` 90 to 129. |
-| `disconnect` | 150 | No lines from `seq` 60 to 104, then the same run continues. `seq` and `uptime_ms` keep counting. |
+| Scenario            | Seconds | What happens                                                                                          |
+| ------------------- | ------- | ----------------------------------------------------------------------------------------------------- |
+| `normal`            | 180     | Resting at about 72 bpm.                                                                              |
+| `hr-above-baseline` | 240     | 135 valid samples at about 72 bpm, then the heart rate rises to about 108 bpm at `seq` 140 and stays. |
+| `fall`              | 180     | Resting, then an impact at `seq` 130 and a settling second, then stillness at about 90 bpm.           |
+| `lost-contact`      | 170     | PPG contact is lost from `seq` 90 to 129.                                                             |
+| `disconnect`        | 150     | No lines from `seq` 60 to 104, then the same run continues. `seq` and `uptime_ms` keep counting.      |
 
 Each scenario starts with 5 seconds in which the heart rate is `null` with
 `warming_up`, as on the board. The 120 valid samples the heart rate baseline
 needs fit before the rise.
 
 [`sessions/`](../sessions) holds one recording per scenario.
+
+## A crew on one port
+
+`--crew` runs several wearers at once. Each comma-separated scenario gets
+the next `astra-0N` device id, keeps its own wearer state and seed, and the
+lines of all devices merge on one output sorted by `uptime_ms`:
+
+```sh
+uv run python -m astra.simulator --crew normal,fall,normal,hr-above-baseline --pty
+```
+
+One pipeline ingests all four devices from that single pseudo-terminal;
+the real board stays `astra-01` on its own port.
 
 ## Point the server at the simulator
 
