@@ -130,17 +130,14 @@ class Rules:
         )
         limitations = [_LIMITATIONS[code] for code in codes]
 
+        judgeable = (
+            hr is not None
+            or m.contact_temperature_c is not None
+            or (m.accel_min_m_s2 is not None and m.accel_max_m_s2 is not None)
+        )
         if fired:
             risk = RiskLevel.REVIEW
-        elif all(
-            value is None
-            for value in (
-                m.heart_rate_bpm,
-                m.contact_temperature_c,
-                m.accel_min_m_s2,
-                m.accel_max_m_s2,
-            )
-        ):
+        elif not judgeable:
             risk = RiskLevel.UNAVAILABLE
             limitations.append(_NO_MEASUREMENT)
         else:
