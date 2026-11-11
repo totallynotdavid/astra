@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { Event, Insight, Reading, Session, Sink, SocketMessage } from "./source";
+import type { Event, Insight, Mission, Reading, Session, Sink, SocketMessage } from "./source";
 import { createStaticSource } from "./static";
 import { buildTimeline, play, type Output, type SessionFile } from "./timeline";
 
@@ -248,6 +248,70 @@ describe("createStaticSource", () => {
     ]);
     expect(target.syncEvents).toHaveBeenCalledTimes(1);
     expect(target.upsertSession).toHaveBeenLastCalledWith(session);
+  });
+
+  it("serves the exported crew read-only, with the readings of the member's watch", async () => {
+    const crewReading: Reading = { ...reading(1), crew_member_id: "m1" };
+    const mission: Mission = {
+      mission: {
+        id: "mission",
+        name: "AZRIEL-1",
+        status: "active",
+        started_at: session.started_at,
+        ended_at: null,
+        crew: [{ id: "m1", code: "AZ-1", display_name: "Valeria", crew_role: "commander" }],
+      },
+      latest: { m1: { device_id: "astra-01", reading: crewReading } },
+      alerts: [],
+      reviews: { "4": [] },
+      runs: [],
+      assessments: {},
+    };
+    const crewFile: SessionFile = {
+      ...file,
+      readings: [0, 1, 2, 3].map((n) => ({ ...reading(n), crew_member_id: "m1" })),
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((path: string) => {
+        const body =
+          path === "sessions/index.json"
+            ? [session]
+            : path === "crew/mission.json"
+              ? mission
+              : path === "sessions/fall.json"
+                ? crewFile
+                : null;
+        return Promise.resolve(
+          body === null
+            ? new Response("", { status: 404 })
+            : new Response(JSON.stringify(body), { status: 200 }),
+        );
+      }),
+    );
+    const syncCrew = vi.fn();
+    const { target } = sink();
+    const source = createStaticSource();
+
+    await source.start({ ...target, syncCrew });
+
+    expect(syncCrew).toHaveBeenCalledWith({
+      members: mission.mission.crew,
+      alerts: [],
+      latest: { m1: { deviceId: "astra-01", reading: crewReading } },
+      runs: [],
+    });
+    const api = source.crew;
+    expect(api).not.toBeNull();
+    const readings = await api!.readings("astra-01", new Date(T0 + 2000).toISOString(), 10);
+    expect(readings.map((r) => r.seq)).toEqual([2, 3]);
+    expect(await api!.reviews(4)).toEqual([]);
+    await expect(api!.postReview(4, { status: "acknowledged", comment: "visto" })).rejects.toThrow(
+      "solo lectura",
+    );
+    await expect(api!.patchFinding(1, { review_status: "confirmed" })).rejects.toThrow(
+      "solo lectura",
+    );
   });
 
   it("rejects a session whose file is missing", async () => {

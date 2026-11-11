@@ -35,6 +35,7 @@ function run(overrides: Partial<ModelRun> & Pick<ModelRun, "id" | "modality">): 
     status: "completed",
     source: "SYNTHETIC",
     crew_member_id: null,
+    scenario: null,
     started_at: `2026-11-11T10:0${overrides.id}:00Z`,
     completed_at: `2026-11-11T10:0${overrides.id}:30Z`,
     findings: [],
@@ -313,6 +314,7 @@ describe("Evaluación", () => {
     run({
       id: 1,
       modality: "video",
+      scenario: "fall",
       findings: [
         finding({ id: 1, label: "possible_fall", review_status: "confirmed" }),
         finding({ id: 2, label: "possible_fall", review_status: "confirmed" }),
@@ -320,7 +322,7 @@ describe("Evaluación", () => {
         finding({ id: 4, label: "abrupt_movement", review_status: "pending" }),
       ],
     }),
-    run({ id: 2, modality: "video" }),
+    run({ id: 2, modality: "video", scenario: "normal-shift" }),
     run({ id: 3, modality: "video", status: "failed", completed_at: null }),
     run({
       id: 4,
@@ -347,21 +349,69 @@ describe("Evaluación", () => {
 
     const vision = screen.getByRole("table", { name: /Hallazgos de Visión/ });
     const fall = within(vision).getByRole("row", { name: /Posible caída/ });
-    expect(cells(fall)).toEqual(["fall", "3", "2", "1", "0", "67%"]);
+    expect(cells(fall)).toEqual(["fall", "1", "0", "3", "2", "1", "0", "67%"]);
     const abrupt = within(vision).getByRole("row", { name: /Movimiento brusco/ });
-    expect(cells(abrupt)).toEqual(["Ninguno", "1", "0", "0", "1", "Sin revisar"]);
+    expect(cells(abrupt)).toEqual(["Ninguno", "0", "0", "1", "0", "0", "1", "Sin revisar"]);
     const isolation = within(vision).getByRole("row", { name: /Aislamiento/ });
-    expect(cells(isolation)).toEqual(["isolation", "0", "0", "0", "0", "Sin revisar"]);
+    expect(cells(isolation)).toEqual(["isolation", "0", "0", "0", "0", "0", "0", "Sin revisar"]);
 
     const audio = screen.getByRole("table", { name: /Hallazgos de Audio/ });
     const phrase = within(audio).getByRole("row", { name: /Frase de alarma explícita/ });
-    expect(cells(phrase)).toEqual(["distress-phrase", "1", "0", "0", "1", "Sin revisar"]);
+    expect(cells(phrase)).toEqual(["distress-phrase", "0", "0", "1", "0", "0", "1", "Sin revisar"]);
 
     expect(screen.getAllByText("Entrada simulada")).toHaveLength(2);
     expect(screen.getByText(/1 ejecución simulada completada/)).toBeTruthy();
     expect(screen.getByText(/2 ejecuciones simuladas completadas/)).toBeTruthy();
     expect(screen.getByText(/1 ejecución fallida/)).toBeTruthy();
     expect(screen.getByText(/1 de otra fuente/)).toBeTruthy();
+  });
+
+  it("counts the scenario runs that missed their label and the findings on quiet scenarios", () => {
+    const { store, source } = setup([
+      run({
+        id: 1,
+        modality: "video",
+        scenario: "fall",
+        findings: [finding({ id: 1, label: "possible_fall" })],
+      }),
+      run({ id: 2, modality: "video", scenario: "fall" }),
+      run({
+        id: 3,
+        modality: "video",
+        scenario: "inactive",
+        findings: [finding({ id: 2, label: "abrupt_movement" })],
+      }),
+      run({
+        id: 4,
+        modality: "video",
+        scenario: "normal-shift",
+        findings: [
+          finding({ id: 3, label: "possible_fall" }),
+          finding({ id: 4, label: "isolation" }),
+        ],
+      }),
+      run({
+        id: 5,
+        modality: "audio",
+        scenario: "normal-briefing",
+        findings: [finding({ id: 5, label: "long_silence", kind: "speech" })],
+      }),
+      run({ id: 6, modality: "audio" }),
+    ]);
+    render(<Evaluation crew={store.getSnapshot()} source={source} />);
+
+    const vision = screen.getByRole("table", { name: /Hallazgos de Visión/ });
+    const fall = within(vision).getByRole("row", { name: /Posible caída/ });
+    expect(cells(fall).slice(0, 3)).toEqual(["fall", "2", "1"]);
+    const inactive = within(vision).getByRole("row", { name: /Inactividad prolongada/ });
+    expect(cells(inactive).slice(0, 3)).toEqual(["inactive", "1", "1"]);
+    expect(
+      screen.getByText("1 ejecución de escenarios sin hallazgo esperado. Señales falsas: 2."),
+    ).toBeTruthy();
+    expect(
+      screen.getByText("1 ejecución de escenarios sin hallazgo esperado. Señales falsas: 1."),
+    ).toBeTruthy();
+    expect(screen.getByText(/1 ejecución sin escenario conocido no cuenta/)).toBeTruthy();
   });
 
   it.each([

@@ -76,6 +76,7 @@ def test_a_simulated_run_is_stored_with_its_finding_and_opens_an_alert(
     stored = next(run for run in runs if run.id == posted["id"])
     assert stored.modality is Modality.audio
     assert stored.source is Source.SYNTHETIC
+    assert stored.scenario == "distress-phrase"
     assert [finding.label.value for finding in stored.findings] == [
         "explicit_distress_phrase"
     ]
@@ -94,6 +95,7 @@ def test_the_lab_token_posts_a_run_whose_speaker_is_not_mapped(server: str) -> N
     posted = json.loads(result.stdout)["model_run"]
     assert {f["label"] for f in posted["findings"]} == {"frequent_interruptions"}
     assert {f["crew_member_id"] for f in posted["findings"]} == {None}
+    assert posted["scenario"] == "interruptions"
 
 
 def test_the_lab_token_cannot_resolve_crew_codes(server: str) -> None:
