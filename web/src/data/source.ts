@@ -30,6 +30,8 @@ export interface Sink {
 
 export interface AstraSource {
   readonly name: string;
+  readonly speeds: readonly number[];
+  readonly replayOnly: boolean;
   start(sink: Sink): void;
   stop(): void;
   startReplay(sessionId: string, speed: number): Promise<Session>;

@@ -63,8 +63,12 @@ export class DashboardStore implements Sink {
   }
 
   upsertSession(session: Session) {
-    const rest = this.state.sessions.filter((s) => s.id !== session.id);
-    this.set({ sessions: [...rest, session] });
+    const known = this.state.sessions.some((s) => s.id === session.id);
+    this.set({
+      sessions: known
+        ? this.state.sessions.map((s) => (s.id === session.id ? session : s))
+        : [...this.state.sessions, session],
+    });
   }
 
   apply(message: SocketMessage) {

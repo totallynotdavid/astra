@@ -20,6 +20,19 @@ export const reasonCodeText: Record<ReasonCode, string> = {
   PPG_CONTACT_LOST: "El sensor de pulso perdió contacto con la piel.",
 };
 
+export const ruleThresholdText: Record<ReasonCode, string> = {
+  BASELINE_PENDING:
+    "Hay menos de 120 lecturas válidas en la sesión. Hasta entonces la línea base es provisional y la regla de frecuencia sobre la base no se aplica.",
+  HR_ABOVE_PERSONAL_BASELINE:
+    "Cinco lecturas válidas seguidas con al menos 25 lpm sobre la línea base. La línea base es la mediana de las primeras 120 lecturas válidas de la sesión.",
+  HR_OUT_OF_RANGE: "Una lectura válida por debajo de 40 lpm o por encima de 160 lpm.",
+  CONTACT_TEMPERATURE_OUT_OF_RANGE:
+    "Temperatura de contacto por debajo de 30,0 °C o por encima de 38,0 °C.",
+  FALL_PATTERN:
+    "Aceleración mínima bajo 3 m/s², luego aceleración máxima sobre 25 m/s² en la misma lectura o en la siguiente, y después dos lecturas con menos de 2 m/s² entre la máxima y la mínima.",
+  PPG_CONTACT_LOST: "El sensor de pulso informa que no tiene contacto con la piel.",
+};
+
 export const missingReasonText: Record<MissingReason, string> = {
   no_contact: "El sensor no está en contacto con la piel.",
   warming_up: "El sensor todavía se está preparando.",
@@ -39,6 +52,12 @@ export const linkStatusText: Record<LinkStatus, string> = {
   stale: "Sin datos recientes",
   disconnected: "Desconectado",
 };
+
+export const replayPhaseText = {
+  idle: "Sin repetición",
+  playing: "Repetición en curso",
+  ended: "Repetición terminada",
+} as const;
 
 export const staleBadgeText = "Dato anterior";
 

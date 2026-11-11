@@ -1,5 +1,5 @@
 import type { components } from "../contract/api";
-import { linkView, type Tone } from "../lib/status";
+import { linkView, replayView, type ReplayPhase, type Tone } from "../lib/status";
 import { Badge } from "./ui/badge";
 
 type DeviceStatus = components["schemas"]["DeviceStatus"];
@@ -9,10 +9,17 @@ const dot: Record<Tone, string> = {
   review: "bg-review",
   critical: "bg-critical",
   neutral: "bg-faint",
+  accent: "bg-accent",
 };
 
-export function LinkPill({ status }: { status: DeviceStatus | null }) {
-  const view = linkView(status);
+export function LinkPill({
+  status,
+  replay = null,
+}: {
+  status: DeviceStatus | null;
+  replay?: ReplayPhase | null;
+}) {
+  const view = replay ? replayView(replay) : linkView(status);
   return (
     <Badge variant={view.tone}>
       <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${dot[view.tone]}`} />

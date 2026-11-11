@@ -50,3 +50,5 @@ lists the rest.
   WebSocket messages.
 - [docs/server.md](docs/server.md): the env variables, storage, ingest,
   reconnect and replay behavior.
+- [docs/site.md](docs/site.md): build the published demo that replays recorded
+  sessions with no server.

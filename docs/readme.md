@@ -8,3 +8,4 @@
 6. [Firmware](firmware.md)
 7. [Simulator](simulator.md)
 8. [Demo](demo.md)
+9. [Published demo](site.md)

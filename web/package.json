@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "bun --bun vite",
     "build": "tsc && bun --bun vite build",
+    "build:site": "tsc && VITE_ASTRA_SOURCE=static bun --bun vite build --base ./ --outDir dist-site",
     "preview": "bun --bun vite preview",
     "typecheck": "tsc",
     "test": "bun --bun vitest run",

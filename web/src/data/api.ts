@@ -127,6 +127,8 @@ export function createApiSource(): AstraSource {
 
   return {
     name: "api",
+    speeds: [0.5, 1, 2, 5, 10],
+    replayOnly: false,
     async start(sink: Sink) {
       try {
         await snapshot(sink);

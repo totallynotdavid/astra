@@ -37,10 +37,11 @@ The server stores each accepted line as a `Reading`: the sample plus
 or `SYNTHETIC` (a generated scenario). Every reading keeps its source, and the
 web app shows it.
 
-An `Insight` is the analysis of one reading. `risk_level` is `normal`,
-`review` or `unavailable`. `method` is `rules` or `ml`, with its `version`.
-`reason_codes` say why, and `limitations` say what the result cannot claim. A
-`score` is null unless a model is calibrated.
+An `Insight` is the analysis of one reading, and its `created_at` is that
+reading's `received_at`. `risk_level` is `normal`, `review` or `unavailable`.
+`method` is `rules` or `ml`, with its `version`. `reason_codes` say why, and
+`limitations` say what the result cannot claim. A `score` is null unless a
+model is calibrated.
 
 ## REST
 

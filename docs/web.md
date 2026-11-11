@@ -6,7 +6,7 @@ port 5173 with a proxy to the API.
 
 ## Screens
 
-The app has four screens, reached from the navigation bar or directly by hash
+The app has five screens, reached from the navigation bar or directly by hash
 route.
 
 - **Resumen** (`#/`): the wearer's current heart rate, contact temperature
@@ -17,6 +17,9 @@ route.
   limitations in plain Spanish, and the event list.
 - **Repetición** (`#/replay`): the stored sessions, and a control that
   starts a replay at a chosen speed.
+- **Ciencia y datos** (`#/science`): what each sensor measures, what ASTRA does
+  not measure, each rule with its threshold worded as a review signal, and the
+  limits of a wrist reading. It shows in every source.
 
 Every reading shows its `source`. A `REPLAY`, `HISTORICAL` or `SYNTHETIC`
 reading is labelled as such and never shown as live. The Spanish text for
@@ -27,7 +30,7 @@ each reason code, missing reason, source and status lives in
 
 One interface, `AstraSource` in
 [`web/src/data/source.ts`](../web/src/data/source.ts), feeds the dashboard
-store. Two implementations exist.
+store. Three implementations exist.
 
 - **api** (default): reads the REST routes of [the contract](contract.md)
   once, then keeps the screen updated from the `/ws/v1/telemetry`
@@ -40,8 +43,13 @@ store. Two implementations exist.
 - **fixture**: generates readings, insights and device statuses in the
   browser, labelled `SYNTHETIC`, for work without a server. Implemented in
   [`web/src/data/fixture.ts`](../web/src/data/fixture.ts).
+- **static**: reads exported session files and plays one back at 1x, 10x or
+  60x, with no server. The Replay screen lists the exported sessions and the
+  link pill shows the replay state. See [the published demo](site.md).
+  Implemented in [`web/src/data/static.ts`](../web/src/data/static.ts).
 
-`VITE_ASTRA_SOURCE=fixture` selects the fixture at build or dev time. A
+`VITE_ASTRA_SOURCE=fixture` or `static` selects the source at build or dev
+time. A
 `?source=fixture` query parameter overrides the variable on a running app,
 and `?source=api` forces the API on a fixture build.
 

@@ -1,6 +1,6 @@
 import type { components } from "../contract/api";
 import type { ChannelState } from "../data/source";
-import { linkStatusText } from "./copy";
+import { linkStatusText, replayPhaseText } from "./copy";
 
 type DeviceStatus = components["schemas"]["DeviceStatus"];
 type LinkStatus = components["schemas"]["LinkStatus"];
@@ -9,7 +9,7 @@ type Reading = components["schemas"]["Reading"];
 type Session = components["schemas"]["Session"];
 type Event = components["schemas"]["Event"];
 
-export type Tone = "success" | "review" | "critical" | "neutral";
+export type Tone = "success" | "review" | "critical" | "neutral" | "accent";
 
 export interface LinkView {
   label: string;
@@ -30,6 +30,17 @@ export function linkView(status: DeviceStatus | null): LinkView {
     label: linkStatusText[status.status],
     tone: linkTone[status.status],
   };
+}
+
+export type ReplayPhase = "idle" | "playing" | "ended";
+
+export function replayPhase(sessions: Session[], readings: Reading[]): ReplayPhase {
+  if (sessions.some((s) => s.ended_at === null)) return "playing";
+  return readings.length > 0 ? "ended" : "idle";
+}
+
+export function replayView(phase: ReplayPhase): LinkView {
+  return { label: replayPhaseText[phase], tone: phase === "playing" ? "accent" : "neutral" };
 }
 
 export function sourceForSession(sessions: Session[], sessionId: string): Source | null {
