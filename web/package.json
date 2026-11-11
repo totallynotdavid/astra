@@ -9,6 +9,7 @@
     "preview": "bun --bun vite preview",
     "typecheck": "tsc",
     "test": "bun --bun vitest run",
+    "test:e2e": "bun --bun vitest run --config vitest.e2e.config.ts",
     "lint": "oxlint --deny-warnings --jsx-a11y-plugin src"
   },
   "dependencies": {
@@ -30,6 +31,7 @@
     "@vitejs/plugin-react": "^6.3.0",
     "happy-dom": "18",
     "oxlint": "^1.93.0",
+    "playwright-core": "^1.65.0",
     "tailwindcss": "^4.3.5",
     "typescript": "^7.0.2",
     "vite": "^8.3.8",

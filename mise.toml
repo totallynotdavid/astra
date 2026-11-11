@@ -7,6 +7,7 @@ uv = "0.13.7"
 description = "Install the server, lab and web dependencies from lockfiles"
 run = [
   "bun install --frozen-lockfile",
+  "bun run --cwd web playwright-core install chromium",
   "uv sync --locked --project server",
   "uv sync --locked --project labs/vision --python 3.14",
   "uv sync --locked --project labs/audio --python 3.14",
@@ -124,6 +125,16 @@ run = "bun run --cwd web build"
 description = "Export the sessions and build the static demo into web/dist-site"
 run = ["cd server && uv run python -m astra.export", "bun run --cwd web build:site"]
 
+[tasks."test:e2e"]
+description = "Build the static demo, then drive it in headless Chromium with no server"
+run = "bun run --cwd web test:e2e"
+
 [tasks.check]
 description = "Run every repository check without writing files"
-run = ["mise run lint", "mise run typecheck", "mise run test", "mise run build", "mise run site"]
+run = [
+  "mise run lint",
+  "mise run typecheck",
+  "mise run test",
+  "mise run build",
+  "mise run test:e2e",
+]

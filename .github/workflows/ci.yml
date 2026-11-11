@@ -31,5 +31,8 @@ jobs:
       - name: install dependencies
         run: mise run install
 
+      - name: install browser libraries
+        run: mise exec -- bun run --cwd web playwright-core install-deps chromium
+
       - name: check
         run: mise run check
