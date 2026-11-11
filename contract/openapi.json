@@ -1443,6 +1443,17 @@
             ],
             "title": "Bio"
           },
+          "credit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Credit"
+          },
           "imported_at": {
             "format": "date-time",
             "title": "Imported At",
@@ -2129,6 +2140,41 @@
           }
         },
         "summary": "Assessment"
+      }
+    },
+    "/api/v1/crew/{crew_member_id}/photo": {
+      "get": {
+        "operationId": "crew_photo_api_v1_crew__crew_member_id__photo_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "crew_member_id",
+            "required": true,
+            "schema": {
+              "title": "Crew Member Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "image/*": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Crew Photo"
       }
     },
     "/api/v1/demo/replay": {
