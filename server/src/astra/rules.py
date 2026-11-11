@@ -32,6 +32,7 @@ FALL_FREE_FALL_M_S2: Final = 3.0
 FALL_IMPACT_M_S2: Final = 25.0
 FALL_STILL_RANGE_M_S2: Final = 2.0
 FALL_STILL_SAMPLES: Final = 2
+FALL_SETTLE_SAMPLES: Final = 1
 
 _LIMITATIONS: Final = {
     ReasonCode.BASELINE_PENDING: (
@@ -89,6 +90,7 @@ class Rules:
         self._hr_streak = 0
         self._fall = _FallPhase.SEEKING
         self._still = 0
+        self._settle = 0
 
     def analyze(self, reading: Reading) -> Insight:
         m = reading.measurements
@@ -161,24 +163,31 @@ class Rules:
         if lo is None or hi is None:
             self._fall = _FallPhase.SEEKING
             self._still = 0
+            self._settle = 0
             return False
         free_fall = lo < FALL_FREE_FALL_M_S2
         impact = hi > FALL_IMPACT_M_S2
-        if self._fall is _FallPhase.STILL and hi - lo < FALL_STILL_RANGE_M_S2:
-            self._still += 1
-            if self._still == FALL_STILL_SAMPLES:
+        if self._fall is _FallPhase.STILL:
+            if hi - lo < FALL_STILL_RANGE_M_S2:
+                self._still += 1
+                if self._still == FALL_STILL_SAMPLES:
+                    self._fall = _FallPhase.SEEKING
+                    self._still = 0
+                    return True
+            elif self._settle:
+                self._settle -= 1
+            else:
                 self._fall = _FallPhase.SEEKING
-                self._still = 0
-                return True
             return False
         if self._fall is _FallPhase.IMPACT:
             if impact:
-                self._fall, self._still = _FallPhase.STILL, 0
+                self._fall, self._still, self._settle = _FallPhase.STILL, 0, 0
             elif not free_fall:
                 self._fall = _FallPhase.SEEKING
         elif free_fall:
             self._fall = _FallPhase.STILL if impact else _FallPhase.IMPACT
             self._still = 0
+            self._settle = FALL_SETTLE_SAMPLES if impact else 0
         else:
             self._fall = _FallPhase.SEEKING
             self._still = 0

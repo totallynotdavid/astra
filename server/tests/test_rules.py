@@ -221,6 +221,17 @@ CASES = [
         ],
     ),
     Case(
+        name="a fall in one sample then a settling second",
+        readings=[
+            *calm(3),
+            sample(3, lo=1.5, hi=35.0),
+            sample(4, lo=6.0, hi=13.0),
+            sample(5),
+            sample(6),
+        ],
+        expected=[pending()] * 6 + [review(B, ReasonCode.FALL_PATTERN)],
+    ),
+    Case(
         name="a hard step is not a fall",
         readings=[
             sample(0, hi=30.0),
