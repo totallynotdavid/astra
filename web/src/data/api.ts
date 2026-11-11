@@ -1,5 +1,21 @@
 import type { components } from "../contract/api";
-import type { AstraSource, Session, Sink, SocketMessage } from "./source";
+import type {
+  Alert,
+  AlertReview,
+  AlertReviewRequest,
+  AstraSource,
+  CrewApi,
+  CrewMember,
+  CrewSnapshot,
+  Finding,
+  FindingPatch,
+  FindingRef,
+  MemberLink,
+  ModelRun,
+  Session,
+  Sink,
+  SocketMessage,
+} from "./source";
 
 type Health = components["schemas"]["Health"];
 type DeviceStatus = components["schemas"]["DeviceStatus"];
@@ -12,6 +28,43 @@ async function get<T>(path: string): Promise<T> {
   const response = await fetch(path);
   if (!response.ok) throw new Error(`GET ${path} respondió ${response.status}`);
   return (await response.json()) as T;
+}
+
+async function send<T>(method: string, path: string, body: unknown): Promise<T> {
+  const response = await fetch(path, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) throw new Error(`${method} ${path} respondió ${response.status}`);
+  return (await response.json()) as T;
+}
+
+async function crewSnapshot(devices: DeviceStatus[]): Promise<CrewSnapshot> {
+  const [members, alerts, runs] = await Promise.all([
+    get<CrewMember[]>("/api/v1/crew"),
+    get<Alert[]>("/api/v1/alerts"),
+    get<ModelRun[]>("/api/v1/model-runs"),
+  ]);
+  const memberIds = new Set(members.map((member) => member.id));
+  const latest: Record<string, MemberLink> = {};
+  await Promise.all(
+    devices.map(async (device) => {
+      const reading = await get<Reading | null>(
+        `/api/v1/measurements/latest?device_id=${device.device_id}`,
+      );
+      if (reading?.crew_member_id && memberIds.has(reading.crew_member_id)) {
+        latest[reading.crew_member_id] = { deviceId: device.device_id, reading };
+      }
+    }),
+  );
+  const findings: Record<number, FindingRef> = {};
+  for (const run of runs) {
+    for (const finding of run.findings) {
+      findings[finding.id] = { finding, modality: run.modality, model_name: run.model_name };
+    }
+  }
+  return { members, alerts, latest, findings };
 }
 
 export function createApiSource(): AstraSource {
@@ -37,13 +90,15 @@ export function createApiSource(): AstraSource {
     try {
       do {
         refreshPending = false;
-        const [events, health] = await Promise.all([
+        const [events, health, alerts] = await Promise.all([
           get<Event[]>("/api/v1/events?limit=100"),
           get<Health>("/health"),
+          get<Alert[]>("/api/v1/alerts"),
         ]);
         if (stopped) return;
         sink.syncEvents(events);
         sink.syncHealth(health);
+        sink.syncCrew?.({ alerts });
       } while (refreshPending);
     } catch {
       refreshPending = false;
@@ -73,6 +128,12 @@ export function createApiSource(): AstraSource {
     const insight = deviceId
       ? await get<Insight | null>(`/api/v1/insights/latest?device_id=${deviceId}`)
       : null;
+    try {
+      sink.syncCrew?.(await crewSnapshot(devices));
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      sink.syncCrew?.({ error: `No se pudo cargar la tripulación. ${detail}` });
+    }
     sink.ready({
       health,
       devices,
@@ -104,7 +165,11 @@ export function createApiSource(): AstraSource {
       try {
         const message = JSON.parse(String(event.data)) as SocketMessage;
         sink.apply(message);
-        if (message.type === "insight" || message.type === "device_status") {
+        if (
+          message.type === "insight" ||
+          message.type === "device_status" ||
+          message.type === "model_run"
+        ) {
           void refresh(sink);
         }
       } catch {
@@ -125,10 +190,34 @@ export function createApiSource(): AstraSource {
     };
   }
 
+  const crew: CrewApi = {
+    assessment(memberId, start, end) {
+      const params = new URLSearchParams();
+      if (start) params.set("start", start);
+      if (end) params.set("end", end);
+      const query = params.size > 0 ? `?${params}` : "";
+      return get(`/api/v1/crew/${memberId}/assessment${query}`);
+    },
+    readings(deviceId, start, limit) {
+      const params = new URLSearchParams({ device_id: deviceId, start, limit: String(limit) });
+      return get<Reading[]>(`/api/v1/measurements?${params}`);
+    },
+    reviews(alertId) {
+      return get<AlertReview[]>(`/api/v1/alerts/${alertId}/reviews`);
+    },
+    postReview(alertId, request: AlertReviewRequest) {
+      return send<AlertReview>("POST", `/api/v1/alerts/${alertId}/reviews`, request);
+    },
+    patchFinding(findingId, patch: FindingPatch) {
+      return send<Finding>("PATCH", `/api/v1/findings/${findingId}`, patch);
+    },
+  };
+
   return {
     name: "api",
     speeds: [0.5, 1, 2, 5, 10],
     replayOnly: false,
+    crew,
     async start(sink: Sink) {
       try {
         await snapshot(sink);
