@@ -8,10 +8,11 @@ returns the rules analyzer in
 `Insight` per reading with `method: rules` and version `1.0`.
 
 `risk_level` is `review` when a rule fires, `normal` when none does, and
-`unavailable` when the reading carries none of the measurements a rule can
-judge: heart rate, contact temperature, or the acceleration bounds. A null
-measurement never counts as a value. Every threshold is a review signal for a
-person, not a clinical limit.
+`unavailable` when the reading has nothing a rule can judge: a valid heart
+rate sample, a contact temperature, or both acceleration bounds. A null
+measurement never counts as a value, and a heart rate sample with
+`motion_artifact` or without `ppg_contact: ok` is not valid. Every threshold
+is a review signal for a person, not a clinical limit.
 
 ## The baseline
 
@@ -24,7 +25,8 @@ and the `HR_ABOVE_PERSONAL_BASELINE` rule cannot fire.
 
 Each fired code adds its Spanish limitation to the insight. An `unavailable`
 insight also states that the reading carried no measurement the rules could
-evaluate.
+evaluate. A heart rate the quality flags rule out, or a single acceleration
+bound, leaves the same answer.
 
 | Code | Fires when | The insight says |
 | --- | --- | --- |
@@ -46,8 +48,9 @@ callable that takes a `Reading` and returns an `Insight`, with a `version`
 attribute naming the model build. The adapter marks the returned insight
 `method: ml` with the model's version.
 
-When the model raises or does not answer within 200 ms, the adapter answers
-the rules insight for that reading instead. The model runs in a single worker
-thread, so a model that hangs cannot block ingest. The wrapped rules analyzer
-sees every reading, so a fallback insight keeps the session state, such as the
-baseline.
+When the model raises, does not answer within 200 ms, or is still working on
+an earlier reading, the adapter answers the rules insight for that reading
+instead. The model runs on a single daemon worker thread, so a model that
+hangs costs one thread and cannot block ingest or hold the process open. The
+wrapped rules analyzer sees every reading, so a fallback insight keeps the
+session state, such as the baseline.
