@@ -57,11 +57,13 @@ route.
 - **Evaluación** (`#/evaluation`): for each lab, the findings of its simulated
   runs per label, with the review outcome the doctor recorded. A finding the
   doctor confirmed counts as true and one the doctor dismissed counts as false.
-  Each label lists the simulator scenario that plants it. A run does not store
-  its scenario, so the screen counts a finding for the scenario that plants its
-  label and cannot count a pattern the model missed. Runs from another source
-  and failed runs are counted apart. Every number is labelled as from simulated
-  input.
+  Each label lists the simulator scenario that plants it. A simulated run
+  stores the name of its scenario, so the screen also counts, per label, the
+  runs of the scenarios that plant it and how many of them missed it. A run of
+  a scenario that plants nothing counts toward the false signals, one per
+  finding it produced. A run with no known scenario counts its findings but
+  not the missed or the false signals. Runs from another source and failed runs
+  are counted apart. Every number is labelled as from simulated input.
 
 Visión, Audio and Evaluación do not appear for an astronaut. In Visión and
 Audio the finding controls follow the rule of Alertas: only an admin or a doctor
@@ -114,10 +116,12 @@ store. Three implementations exist. `selectBackend` in
   labelled `SYNTHETIC`, for work without a server. It has no login and runs as a
   doctor. Implemented in
   [`web/src/data/fixture.ts`](../web/src/data/fixture.ts).
-- **static**: reads exported session files and plays one back at 1x, 10x or 60x,
-  with no server. It has no login and runs as a jury user. The Replay screen
-  lists the exported sessions and the link pill shows the replay state. See
-  [the published demo](site.md). Implemented in
+- **static**: reads the exported files with no server. It shows the crew, the
+  profiles, the alerts with their review trail, the vision and audio runs and
+  the evaluation from `crew/mission.json`, and plays one exported session back
+  at 1x, 10x or 60x. It has no login and runs as a jury user, so every screen is
+  read only. The Replay screen lists the exported sessions and the link pill
+  shows the replay state. See [the published demo](site.md). Implemented in
   [`web/src/data/static.ts`](../web/src/data/static.ts).
 
 Crew state lives in a second store, `CrewStore` in
@@ -130,8 +134,10 @@ is built from them, so a finding reviewed on any screen changes in all of them. 
 reloads its assessment and the member's recent readings when a `model_run`
 arrives, when the member's alerts change and every 10 seconds. On-demand calls
 (the assessment, the readings behind the chart, the review trail, posting a
-review, patching a finding) go through `source.crew`, which is `null` on the
-fixture and static sources, so the crew screens show their empty states there.
+review, patching a finding) go through `source.crew`. It is `null` on the
+fixture source, so the crew screens show their empty states there. On the static
+source it answers from the mission file and the session files, and refuses a
+review or a finding change.
 
 `VITE_ASTRA_SOURCE=fixture` or `static` selects the source at build or dev time.
 A `?source=fixture` query parameter overrides the variable on a running app, and

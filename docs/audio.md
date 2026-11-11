@@ -33,8 +33,11 @@ mise run lab:audio -- run \
   --username admin --password astra-admin
 ```
 
-The command prints the origin, the participation of each speaker, the findings
-and, with `--server`, the stored run. `--username` and `--password` also read
+The command prints the origin, the participation of each speaker and the
+findings. Without `--server` it also prints the `NewModelRun` it would post
+under `run`. With `--server` it prints the stored run under `model_run`. A
+simulated run keeps the name of its scenario in the run's `scenario` field; a
+run from a file has none. `--username` and `--password` also read
 `ASTRA_USERNAME` and `ASTRA_PASSWORD`.
 
 A lab with no account sends the [lab token](auth.md#lab-token) in

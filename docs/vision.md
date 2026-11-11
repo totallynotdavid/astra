@@ -36,8 +36,10 @@ instead: set `ASTRA_LAB_TOKEN` to the server's value. The token opens only
 `POST /api/v1/model-runs`, so with `--crew` it fails and names the fix.
 
 Analyze a saved track with `--input FILE`. Without `--server`, the command
-prints the findings. With `--server`, it posts the run. A track from a file is
-reported as `HISTORICAL` by default. Use `--input-source REPLAY` for a track
+prints the frame count, the findings and the `NewModelRun` it would post under
+`run`. With `--server`, it posts the run. A simulated run keeps the name of its
+scenario in the run's `scenario` field; a run from a file has none. A track from
+a file is reported as `HISTORICAL` by default. Use `--input-source REPLAY` for a track
 replayed from a camera session. A simulated track is `SYNTHETIC`.
 
 ## Pose track
