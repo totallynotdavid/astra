@@ -28,7 +28,7 @@ run = "bun run --cwd web dev"
 description = "Build the web app and serve it with the API on 127.0.0.1:8000"
 run = [
   "bun run --cwd web build",
-  "cd server && ASTRA_WEB_DIST=../web/dist uv run uvicorn astra.app:create_app --factory --host 127.0.0.1 --port 8000",
+  "cd server && ASTRA_DEMO=1 ASTRA_WEB_DIST=../web/dist uv run uvicorn astra.app:create_app --factory --host 127.0.0.1 --port 8000",
 ]
 
 [tasks.generate]

@@ -132,6 +132,7 @@
       },
       "AlertReviewRequest": {
         "additionalProperties": false,
+        "description": "A review. The actor is the signed-in user, never part of the request.",
         "properties": {
           "action": {
             "anyOf": [
@@ -144,10 +145,6 @@
             ],
             "title": "Action"
           },
-          "actor": {
-            "title": "Actor",
-            "type": "string"
-          },
           "comment": {
             "default": "",
             "title": "Comment",
@@ -158,8 +155,7 @@
           }
         },
         "required": [
-          "status",
-          "actor"
+          "status"
         ],
         "title": "AlertReviewRequest",
         "type": "object"
@@ -1011,6 +1007,27 @@
         "title": "LinkStatus",
         "type": "string"
       },
+      "LoginRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "password": {
+            "maxLength": 128,
+            "title": "Password",
+            "type": "string"
+          },
+          "username": {
+            "maxLength": 64,
+            "title": "Username",
+            "type": "string"
+          }
+        },
+        "required": [
+          "username",
+          "password"
+        ],
+        "title": "LoginRequest",
+        "type": "object"
+      },
       "Measurements": {
         "additionalProperties": false,
         "description": "One second of sensor output. A value the sensor could not give is null.",
@@ -1406,6 +1423,45 @@
           "started_at"
         ],
         "title": "NewModelRun",
+        "type": "object"
+      },
+      "NewUser": {
+        "additionalProperties": false,
+        "properties": {
+          "crew_member_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Crew Member Id"
+          },
+          "password": {
+            "maxLength": 128,
+            "minLength": 8,
+            "title": "Password",
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/UserRole"
+          },
+          "username": {
+            "maxLength": 32,
+            "minLength": 3,
+            "pattern": "^[a-z0-9][a-z0-9._-]*$",
+            "title": "Username",
+            "type": "string"
+          }
+        },
+        "required": [
+          "username",
+          "password",
+          "role"
+        ],
+        "title": "NewUser",
         "type": "object"
       },
       "PpgContact": {
@@ -1843,6 +1899,119 @@
         "title": "TelemetryMessage",
         "type": "object"
       },
+      "User": {
+        "additionalProperties": false,
+        "description": "A local account. The password hash never leaves the server.",
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "crew_member_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Crew Member Id"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/UserRole"
+          },
+          "username": {
+            "maxLength": 32,
+            "minLength": 3,
+            "pattern": "^[a-z0-9][a-z0-9._-]*$",
+            "title": "Username",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "username",
+          "role",
+          "crew_member_id",
+          "active",
+          "created_at"
+        ],
+        "title": "User",
+        "type": "object"
+      },
+      "UserPatch": {
+        "additionalProperties": false,
+        "description": "Fields left out stay as they are. `crew_member_id: null` clears it.",
+        "properties": {
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "crew_member_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Crew Member Id"
+          },
+          "password": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 8,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Password"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserRole"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "UserPatch",
+        "type": "object"
+      },
+      "UserRole": {
+        "enum": [
+          "admin",
+          "doctor",
+          "astronaut",
+          "jury"
+        ],
+        "title": "UserRole",
+        "type": "string"
+      },
       "ValidationError": {
         "properties": {
           "ctx": {
@@ -1882,6 +2051,19 @@
         ],
         "title": "ValidationError",
         "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "APIKeyCookie": {
+        "description": "The session from /auth/login.",
+        "in": "cookie",
+        "name": "astra_session",
+        "type": "apiKey"
+      },
+      "HTTPBearer": {
+        "description": "The lab token from ASTRA_LAB_TOKEN.",
+        "scheme": "bearer",
+        "type": "http"
       }
     }
   },
@@ -1954,6 +2136,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
         "summary": "Alerts"
       }
     },
@@ -1997,6 +2184,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
         "summary": "Reviews"
       },
       "post": {
@@ -2044,7 +2236,84 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
         "summary": "Post Review"
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "operationId": "login_api_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Login"
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "operationId": "logout_api_v1_auth_logout_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Logout"
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "operationId": "me_api_v1_auth_me_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Me"
       }
     },
     "/api/v1/crew": {
@@ -2066,6 +2335,11 @@
             "description": "Successful Response"
           }
         },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
         "summary": "Crew"
       }
     },
@@ -2139,6 +2413,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
         "summary": "Assessment"
       }
     },
@@ -2174,6 +2453,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
         "summary": "Crew Photo"
       }
     },
@@ -2212,6 +2496,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
         "summary": "Start Replay"
       }
     },
@@ -2234,6 +2523,11 @@
             "description": "Successful Response"
           }
         },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
         "summary": "Devices"
       }
     },
@@ -2294,6 +2588,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
         "summary": "Events"
       }
     },
@@ -2343,6 +2642,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
         "summary": "Patch Finding"
       }
     },
@@ -2390,6 +2694,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
         "summary": "Latest Insight"
       }
     },
@@ -2477,6 +2786,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
         "summary": "Measurements"
       }
     },
@@ -2524,6 +2838,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
         "summary": "Latest Measurement"
       }
     },
@@ -2546,6 +2865,11 @@
             "description": "Successful Response"
           }
         },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
         "summary": "Missions"
       }
     },
@@ -2646,6 +2970,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
         "summary": "Model Runs"
       },
       "post": {
@@ -2682,6 +3011,14 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ],
         "summary": "Post Model Run"
       }
     },
@@ -2704,7 +3041,134 @@
             "description": "Successful Response"
           }
         },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
         "summary": "Sessions"
+      }
+    },
+    "/api/v1/users": {
+      "get": {
+        "operationId": "users_api_v1_users_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/User"
+                  },
+                  "title": "Response Users Api V1 Users Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Users"
+      },
+      "post": {
+        "operationId": "post_user_api_v1_users_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewUser"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Post User"
+      }
+    },
+    "/api/v1/users/{user_id}": {
+      "patch": {
+        "operationId": "patch_user_api_v1_users__user_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Patch User"
       }
     },
     "/health": {
