@@ -25,8 +25,13 @@ const stroke: Record<Source, string> = {
   HISTORICAL: "var(--color-faint)",
 };
 
-function tick(ms: number) {
-  return new Date(ms).toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" });
+// Under a quarter hour, minute ticks repeat; seconds keep each tick distinct.
+function tickFormat(windowMs: number) {
+  const options: Intl.DateTimeFormatOptions =
+    windowMs <= 15 * 60_000
+      ? { minute: "2-digit", second: "2-digit" }
+      : { hour: "2-digit", minute: "2-digit" };
+  return (ms: number) => new Date(ms).toLocaleTimeString("es", options);
 }
 
 export function MeasurementChart({
@@ -36,6 +41,7 @@ export function MeasurementChart({
   now,
   baseline = null,
   windowMs = LIVE_WINDOW_MS,
+  showSources = true,
 }: {
   title: string;
   measurement: MeasurementName;
@@ -43,6 +49,7 @@ export function MeasurementChart({
   now: number;
   baseline?: number | null;
   windowMs?: number;
+  showSources?: boolean;
 }) {
   const groups = splitBySource(readings)
     .map((group) => ({ ...group, series: toSeries(group.readings, measurement, now, windowMs) }))
@@ -55,7 +62,7 @@ export function MeasurementChart({
           <span className="ml-2 text-xs text-faint">{measurementUnit[measurement]}</span>
         </h2>
         <div className="flex items-center gap-3">
-          {groups.map((group) => (
+          {(showSources || groups.length > 1 ? groups : []).map((group) => (
             <span key={group.source} className="flex items-center gap-1.5">
               <span
                 aria-hidden="true"
@@ -79,7 +86,8 @@ export function MeasurementChart({
                 dataKey="t"
                 type="number"
                 domain={["dataMin", "dataMax"]}
-                tickFormatter={tick}
+                tickFormatter={tickFormat(windowMs)}
+                minTickGap={24}
                 tick={{ fill: "var(--color-muted)", fontSize: 12 }}
                 stroke="var(--color-border)"
               />

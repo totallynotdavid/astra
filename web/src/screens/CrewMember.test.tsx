@@ -85,6 +85,17 @@ const assessment: CrewAssessment = {
       review_status: null,
       quality: { missing: [], motion_artifact: true, ppg_contact: "ok", source: "SYNTHETIC" },
     },
+    {
+      id: 3,
+      at: "2026-11-11T09:59:30Z",
+      labels: ["long_silence"],
+      variables: ["speech"],
+      origin: "finding",
+      confidence: 0.82,
+      evidence: { description: "Silencio de 12 s en el canal", media_ref: null },
+      review_status: "pending",
+      quality: { missing: [], motion_artifact: false, ppg_contact: null, source: "SYNTHETIC" },
+    },
   ],
 };
 
@@ -167,10 +178,12 @@ describe("crew profile", () => {
     expect(screen.getByText("confianza 82%")).toBeTruthy();
     expect(screen.getByText("Simulado")).toBeTruthy();
     expect(screen.queryByText("En vivo")).toBeNull();
-    expect(screen.getByText("Revisar").getAttribute("href")).toBe("#/alerts?member=m1");
+    expect(screen.getByText("Revisar").getAttribute("href")).toBe("#/alertas?member=m1");
 
-    const profile = screen.getByText("Perfil público").closest("div")!.parentElement!;
-    expect(within(profile).getByText("Referencia pública")).toBeTruthy();
+    const profile = screen.getByText("Perfil público").parentElement!;
+    expect(
+      within(profile).getByText("Datos públicos de la agencia, no mediciones de esta persona."),
+    ).toBeTruthy();
     expect(within(profile).getByText("Fuente pública").getAttribute("href")).toBe(
       "https://example.org/perfil",
     );
@@ -182,9 +195,11 @@ describe("crew profile", () => {
     setup(fn);
     await screen.findByText("Línea base");
     expect(fn).toHaveBeenLastCalledWith("m1", null, null);
-    fireEvent.change(screen.getByLabelText("Periodo de la evaluación"), {
-      target: { value: "30m" },
-    });
+    fireEvent.click(
+      within(screen.getByRole("group", { name: "Periodo de la evaluación" })).getByRole("button", {
+        name: "30 minutos",
+      }),
+    );
     await waitFor(() => expect(fn).toHaveBeenCalledTimes(2));
     const start = fn.mock.calls[1]?.[1];
     expect(start).toMatch(/^\d{4}-\d{2}-\d{2}T/);
@@ -255,8 +270,7 @@ describe("crew profile", () => {
         latest_insight: null,
       })),
     );
-    await screen.findByText("Sin hallazgos en este periodo.");
-    expect(screen.getByText("Nada señalado en este periodo.")).toBeTruthy();
+    await screen.findByText("Nada señalado en este periodo.");
     expect(screen.getByText("Sin alertas abiertas.")).toBeTruthy();
     expect(screen.getByText("Sin análisis en este periodo.")).toBeTruthy();
   });

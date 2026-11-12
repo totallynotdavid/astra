@@ -9,16 +9,12 @@ import { useDashboard, type DashboardStore } from "./data/store";
 import { canReplay, canSeeLabs, ownProfile, reviewerName } from "./lib/access";
 import { primaryDeviceId, replayPhase } from "./lib/status";
 import { Alerts } from "./screens/Alerts";
-import { Audio } from "./screens/Audio";
 import { Crew } from "./screens/Crew";
 import { CrewMemberScreen } from "./screens/CrewMember";
-import { Evaluation } from "./screens/Evaluation";
-import { Insights } from "./screens/Insights";
-import { Live } from "./screens/Live";
-import { Overview } from "./screens/Overview";
-import { Replay } from "./screens/Replay";
-import { Science } from "./screens/Science";
-import { Vision } from "./screens/Vision";
+import { Laboratorios } from "./screens/Laboratorios";
+import { Metodo } from "./screens/Metodo";
+import { Senales } from "./screens/Senales";
+import { Sesiones } from "./screens/Sesiones";
 
 function useHashRoute() {
   const [route, setRoute] = useState(() => location.hash || "#/");
@@ -30,6 +26,19 @@ function useHashRoute() {
   const [path = "#/", query = ""] = route.split("?");
   return { path, params: new URLSearchParams(query) };
 }
+
+const redirects: Record<string, string> = {
+  "#/crew": "#/",
+  "#/resumen": "#/senales",
+  "#/live": "#/senales",
+  "#/insights": "#/senales",
+  "#/alerts": "#/alertas",
+  "#/vision": "#/laboratorios/vision",
+  "#/audio": "#/laboratorios/audio",
+  "#/evaluation": "#/laboratorios/evaluacion",
+  "#/replay": "#/sesiones",
+  "#/science": "#/metodo",
+};
 
 export function App({
   store,
@@ -46,23 +55,28 @@ export function App({
 }) {
   const { path, params } = useHashRoute();
   const own = ownProfile(user);
-  const redirect = own !== null && (path === "#/" || path === "#/crew") ? own : null;
+  const redirect =
+    own !== null && (path === "#/" || path === "#/crew") ? own : (redirects[path] ?? null);
   useEffect(() => {
-    if (redirect) location.hash = redirect;
-  }, [redirect]);
+    if (redirect) {
+      const query = params.toString();
+      location.hash = query ? `${redirect}?${query}` : redirect;
+    }
+  }, [redirect, params]);
   const state = useDashboard(store);
   const crewState = useCrew(crew);
   const deviceId = primaryDeviceId(state.devices, state.readings);
   const device = state.devices.find((d) => d.device_id === deviceId) ?? null;
   const replay = source.replayOnly ? replayPhase(state.sessions, state.readings) : null;
   const hasCrew = crewState.members.length > 0;
-  const science = path === "#/science";
+  const metodo = path === "#/metodo";
 
   const crewMatch = path.match(/^#\/crew\/(.+)$/);
+  const labsMatch = path.match(/^#\/laboratorios(?:\/(.+))?$/);
 
   let screen = null;
-  if (science) {
-    screen = <Science replayOnly={source.replayOnly} />;
+  if (metodo) {
+    screen = <Metodo replayOnly={source.replayOnly} />;
   } else if (state.phase === "loading") {
     screen = <LoadingView />;
   } else if (state.phase === "error") {
@@ -77,9 +91,15 @@ export function App({
         source={source}
       />
     );
-  } else if (path === "#/crew" || (path === "#/" && hasCrew)) {
-    screen = <Crew state={state} crew={crewState} recorded={source.replayOnly} />;
-  } else if (path === "#/alerts") {
+  } else if (path === "#/") {
+    screen = hasCrew ? (
+      <Crew state={state} crew={crewState} recorded={source.replayOnly} />
+    ) : (
+      <Senales state={state} replay={replay} replayOnly={source.replayOnly} />
+    );
+  } else if (path === "#/senales") {
+    screen = <Senales state={state} replay={replay} replayOnly={source.replayOnly} />;
+  } else if (path === "#/alertas") {
     screen = (
       <Alerts
         crew={crewState}
@@ -89,46 +109,55 @@ export function App({
         reviewer={reviewerName(user)}
       />
     );
-  } else if (path === "#/vision" && canSeeLabs(user)) {
-    screen = <Vision crew={crewState} store={crew} source={source} reviewer={reviewerName(user)} />;
-  } else if (path === "#/audio" && canSeeLabs(user)) {
-    screen = <Audio crew={crewState} store={crew} source={source} reviewer={reviewerName(user)} />;
-  } else if (path === "#/evaluation" && canSeeLabs(user)) {
-    screen = <Evaluation crew={crewState} source={source} />;
-  } else if (path === "#/resumen") {
-    screen = <Overview state={state} replay={replay} />;
-  } else if (path === "#/live") {
-    screen = <Live state={state} />;
-  } else if (path === "#/insights") {
-    screen = <Insights state={state} />;
-  } else if (path === "#/replay" && canReplay(user, source.replayOnly)) {
-    screen = <Replay state={state} source={source} store={store} replay={replay} />;
+  } else if (labsMatch && canSeeLabs(user)) {
+    screen = (
+      <Laboratorios
+        tab={labsMatch[1] ?? "vision"}
+        crew={crewState}
+        store={crew}
+        source={source}
+        reviewer={reviewerName(user)}
+      />
+    );
+  } else if (path === "#/sesiones" && canReplay(user, source.replayOnly)) {
+    screen = <Sesiones state={state} source={source} store={store} replay={replay} />;
   } else {
-    screen = <Overview state={state} replay={replay} />;
+    screen = hasCrew ? (
+      <Crew state={state} crew={crewState} recorded={source.replayOnly} />
+    ) : (
+      <Senales state={state} replay={replay} replayOnly={source.replayOnly} />
+    );
   }
 
   return (
     <div className="min-h-screen">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-full focus:bg-surface focus:px-4 focus:py-2 focus:text-sm focus:shadow-overlay"
+      >
+        Saltar al contenido
+      </a>
       <AppHeader
         route={path}
         device={device}
         channel={state.channel}
         replayOnly={source.replayOnly}
         replay={replay}
-        hasCrew={hasCrew}
         user={user}
         onLogout={onLogout}
       />
-      <main id="main" className="mx-auto max-w-6xl p-6">
-        {!science && state.phase === "ready" && state.error && (
+      <main id="main" className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+        {!metodo && state.phase === "ready" && state.error && (
           <p
             role="alert"
-            className="mb-4 rounded-sm border border-critical/40 bg-surface px-3 py-2 text-sm text-critical"
+            className="mb-6 rounded-panel border border-critical/30 bg-surface px-4 py-3 text-sm text-critical"
           >
             {state.error}
           </p>
         )}
-        {screen}
+        <div key={path.split("/")[1]} className="page-enter">
+          {screen}
+        </div>
       </main>
     </div>
   );

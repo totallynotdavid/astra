@@ -2,7 +2,7 @@ import { useState } from "react";
 
 import type { components } from "../contract/api";
 import type { FindingRef } from "../data/source";
-import { findingKindText, findingLabelText, modalityText, reviewStatusText } from "../lib/copy";
+import { reviewStatusText } from "../lib/copy";
 import { formatClock } from "../lib/format";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
@@ -10,15 +10,21 @@ import { Button } from "./ui/button";
 type CrewMember = components["schemas"]["CrewMember"];
 type FindingPatch = components["schemas"]["FindingPatch"];
 
-const reviewVariant = { pending: "review", confirmed: "success", dismissed: "neutral" } as const;
+const reviewVariant = {
+  pending: "review",
+  confirmed: "success",
+  dismissed: "neutral",
+} as const;
 
 export function FindingRow({
   refData,
   members,
   onPatch,
+  title,
 }: {
   refData: FindingRef;
   members: CrewMember[];
+  title?: string;
   onPatch: ((patch: FindingPatch) => Promise<unknown>) | null;
 }) {
   const { finding, modality } = refData;
@@ -36,22 +42,22 @@ export function FindingRow({
     }
   }
   return (
-    <li className="border-t border-border/50 py-2">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm text-text">{findingLabelText[finding.label]}</span>
-        <Badge variant="neutral">{findingKindText[finding.kind]}</Badge>
-        <Badge variant="neutral">{modalityText[modality]}</Badge>
+    <li className="border-t border-border/50 py-2.5">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        {title && <span className="text-sm text-text">{title}</span>}
+        <span className="text-sm text-muted tabular-nums">
+          de {formatClock(finding.start_s)} a {formatClock(finding.end_s)}
+        </span>
         <span className="text-xs text-muted tabular-nums">
           confianza {Math.round(finding.confidence * 100)}%
         </span>
-        <span className="text-xs text-muted tabular-nums">
-          de {formatClock(finding.start_s)} a {formatClock(finding.end_s)}
-        </span>
-        <Badge variant={reviewVariant[finding.review_status]}>
-          {reviewStatusText[finding.review_status]}
-        </Badge>
+        {finding.review_status !== "pending" && (
+          <Badge variant={reviewVariant[finding.review_status]}>
+            {reviewStatusText[finding.review_status]}
+          </Badge>
+        )}
       </div>
-      <p className="mt-1 text-xs text-muted">{finding.evidence.description}</p>
+      <p className="mt-1 text-sm text-muted">{finding.evidence.description}</p>
       {onPatch && (
         <div className="mt-2 flex flex-wrap items-center gap-2">
           {finding.review_status !== "confirmed" && (

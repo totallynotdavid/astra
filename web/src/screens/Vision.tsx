@@ -24,10 +24,11 @@ function playable(reference: string): boolean {
 
 function Overlay({ run }: { run: ModelRun }) {
   const media = mediaOf(run);
+  if (!media) return null;
   return (
     <Card className="p-4">
       <CardTitle>Vídeo con el trazado</CardTitle>
-      {media && playable(media) ? (
+      {playable(media) ? (
         <video
           className="mt-3 w-full max-w-xl rounded-sm"
           src={media}
@@ -37,9 +38,7 @@ function Overlay({ run }: { run: ModelRun }) {
         />
       ) : (
         <p className="mt-1 text-sm text-muted">
-          {media
-            ? `El vídeo no se puede abrir desde aquí. Referencia: ${media}`
-            : "Esta ejecución no incluye un vídeo con el trazado."}
+          {`El vídeo no se puede abrir desde aquí. Referencia: ${media}`}
         </p>
       )}
     </Card>

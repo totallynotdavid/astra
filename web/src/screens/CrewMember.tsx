@@ -18,8 +18,6 @@ import {
   alertReasonText,
   alertStatusText,
   crewRoleText,
-  findingKindText,
-  findingLabelText,
   measurementText,
   modalityText,
   ppgContactText,
@@ -27,6 +25,9 @@ import {
 } from "../lib/copy";
 import { formatDateTime, formatValue } from "../lib/format";
 import { useNow } from "../lib/useNow";
+import { PageHead } from "../components/PageHead";
+import { SimulatedNote } from "../components/SimulatedNote";
+import { Segmented, SegmentedButton } from "../components/ui/segmented";
 
 type AssessmentFinding = components["schemas"]["AssessmentFinding"];
 type AssessmentSignal = components["schemas"]["AssessmentSignal"];
@@ -52,56 +53,52 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function SignalRow({ signal }: { signal: AssessmentSignal }) {
+// A finding signal comes from a model run; its origin is the run's modality and
+// model. An insight signal comes from the wearable, so its origin is the
+// variables and their quality.
+function signalOrigin(signal: AssessmentSignal, finding: AssessmentFinding | undefined): string {
+  if (finding) return `${modalityText[finding.modality]} · ${finding.model_name}`;
+  return [
+    signal.variables.map((v) => measurementText[v as never] ?? v).join(", "),
+    signal.quality.ppg_contact && ppgContactText[signal.quality.ppg_contact],
+    signal.quality.missing.length > 0 &&
+      `Sin dato: ${signal.quality.missing.map((m) => measurementText[m]).join(", ")}`,
+    signal.quality.motion_artifact && "Movimiento brusco",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
+
+function SignalRow({
+  signal,
+  finding,
+  showSource,
+}: {
+  signal: AssessmentSignal;
+  finding: AssessmentFinding | undefined;
+  showSource: boolean;
+}) {
   return (
-    <li className="border-t border-border/50 py-2 first:border-t-0 first:pt-0">
-      <div className="flex flex-wrap items-center gap-2">
-        {signal.labels.map((label) => (
-          <Badge key={label} variant="review">
-            {alertReasonText(label)}
-          </Badge>
-        ))}
-        {signal.quality.source && <SourceBadge source={signal.quality.source} />}
+    <li className="border-t border-border/50 py-3 first:border-t-0 first:pt-0">
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <span className="text-sm font-medium text-text">
+          {signal.labels.map(alertReasonText).join(", ")}
+        </span>
         {signal.confidence != null && (
           <span className="text-xs text-muted tabular-nums">
             confianza {Math.round(signal.confidence * 100)}%
           </span>
         )}
-        {signal.review_status && (
+        {showSource && signal.quality.source && <SourceBadge source={signal.quality.source} />}
+        {signal.review_status && signal.review_status !== "pending" && (
           <Badge variant={reviewVariant[signal.review_status]}>
             {reviewStatusText[signal.review_status]}
           </Badge>
         )}
         <span className="ml-auto text-xs text-muted tabular-nums">{formatDateTime(signal.at)}</span>
       </div>
-      {signal.evidence && <p className="mt-1 text-xs text-muted">{signal.evidence.description}</p>}
-      <p className="mt-1 text-xs text-faint">
-        Variables: {signal.variables.map((v) => measurementText[v as never] ?? v).join(", ")}
-        {signal.quality.ppg_contact && ` · ${ppgContactText[signal.quality.ppg_contact]}`}
-        {signal.quality.missing.length > 0 &&
-          ` · Sin dato: ${signal.quality.missing.map((m) => measurementText[m]).join(", ")}`}
-        {signal.quality.motion_artifact ? " · Movimiento brusco" : ""}
-      </p>
-    </li>
-  );
-}
-
-function FindingRow({ item }: { item: AssessmentFinding }) {
-  const { finding } = item;
-  return (
-    <li className="border-t border-border/50 py-2 first:border-t-0 first:pt-0">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm text-text">{findingLabelText[finding.label]}</span>
-        <Badge variant="neutral">{findingKindText[finding.kind]}</Badge>
-        <Badge variant="neutral">{item.model_name}</Badge>
-        <span className="text-xs text-muted tabular-nums">
-          confianza {Math.round(finding.confidence * 100)}%
-        </span>
-        <Badge variant={reviewVariant[finding.review_status]}>
-          {reviewStatusText[finding.review_status]}
-        </Badge>
-      </div>
-      <p className="mt-1 text-xs text-muted">{finding.evidence.description}</p>
+      {signal.evidence && <p className="mt-1 text-sm text-muted">{signal.evidence.description}</p>}
+      <p className="mt-1 text-xs text-faint">{signalOrigin(signal, finding)}</p>
     </li>
   );
 }
@@ -111,11 +108,8 @@ function PublicProfile({ member }: { member: CrewMemberT }) {
   if (!profile) return null;
   return (
     <Card className="p-4">
-      <div className="flex items-center gap-2">
-        <CardTitle>Perfil público</CardTitle>
-        <Badge variant="neutral">Referencia pública</Badge>
-      </div>
-      <p className="mt-2 text-xs text-muted">
+      <CardTitle>Perfil público</CardTitle>
+      <p className="mt-1 text-xs text-muted">
         Datos públicos de la agencia, no mediciones de esta persona.
       </p>
       <div className="mt-3 flex gap-3">
@@ -195,45 +189,53 @@ export function CrewMemberScreen({
     CHART_WINDOW_MS,
     Math.max(60_000, chartEnd - Date.parse(assessment?.start ?? new Date(chartEnd).toISOString())),
   );
-  const modalities = [...new Set(assessment?.findings.map((f) => f.modality) ?? [])];
+  const sources = [
+    ...new Set([
+      ...readings.map((r) => r.source),
+      ...(assessment?.signals.flatMap((s) => (s.quality.source ? [s.quality.source] : [])) ?? []),
+    ]),
+  ];
+  const uniform = sources.length === 1 ? sources[0] : null;
+  const findingOf = (signal: AssessmentSignal) =>
+    signal.origin === "finding"
+      ? assessment?.findings.find((f) => f.finding.id === signal.id)
+      : undefined;
+  const hr = assessment?.heart_rate;
 
   return (
-    <div className="space-y-4">
-      <Card className="p-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="min-w-0">
-            <p className="text-xs text-muted">{member.code}</p>
-            <h1 className="text-xl font-medium">{member.display_name}</h1>
-            <p className="text-sm text-muted">{crewRoleText[member.crew_role]}</p>
-          </div>
-          <div className="ml-auto flex items-center gap-3">
+    <div className="space-y-6">
+      <PageHead
+        title={member.display_name}
+        note={`${member.code} · ${crewRoleText[member.crew_role]}`}
+        aside={
+          <>
+            {uniform &&
+              (source.replayOnly && uniform !== "LIVE" ? (
+                <SimulatedNote />
+              ) : (
+                <SourceBadge source={uniform} />
+              ))}
             {device ? (
               <LinkPill status={device} />
             ) : (
-              <Badge variant="neutral">
-                {source.replayOnly && deviceId ? "Grabación" : "Sin dispositivo"}
-              </Badge>
+              !source.replayOnly && <Badge variant="neutral">Sin dispositivo</Badge>
             )}
             {!source.replayOnly && (
-              <label className="flex items-center gap-2 text-sm text-muted">
-                Periodo
-                <select
-                  aria-label="Periodo de la evaluación"
-                  className="h-10 rounded-sm border border-border-strong bg-raised px-3 text-base text-text"
-                  value={period}
-                  onChange={(e) => setPeriod(e.target.value as typeof period)}
-                >
-                  {periods.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <Segmented label="Periodo de la evaluación">
+                {periods.map((p) => (
+                  <SegmentedButton
+                    key={p.id}
+                    active={period === p.id}
+                    onClick={() => setPeriod(p.id)}
+                  >
+                    {p.label.replace("Últimos ", "").replace("Últimas ", "")}
+                  </SegmentedButton>
+                ))}
+              </Segmented>
             )}
-          </div>
-        </div>
-      </Card>
+          </>
+        }
+      />
 
       {entry?.phase === "error" && (
         <ErrorView message={entry.error ?? "No se pudo cargar la evaluación."} />
@@ -247,49 +249,44 @@ export function CrewMemberScreen({
 
       {assessment && (
         <>
-          <div className="grid gap-4 lg:grid-cols-2">
-            <Card className="p-4">
-              <CardTitle>Frecuencia cardíaca frente a su línea base</CardTitle>
-              <dl className="mt-3 grid grid-cols-3 gap-3">
+          <div className="grid items-start gap-4 lg:grid-cols-2">
+            <Card className="p-5">
+              <CardTitle className="text-sm font-normal text-muted">Frecuencia cardíaca</CardTitle>
+              <p className="mt-2 text-4xl font-semibold tracking-tight tabular-nums">
+                {hr?.latest_bpm == null ? "Sin dato" : formatValue(hr.latest_bpm)}
+                {hr?.latest_bpm != null && (
+                  <span className="ml-1.5 text-base font-normal text-muted">lpm</span>
+                )}
+              </p>
+              <p className="mt-1 text-sm text-muted">
+                {hr?.delta_bpm == null ? (
+                  "Sin línea base para comparar."
+                ) : (
+                  <>
+                    <span className="font-medium text-text tabular-nums">
+                      {hr.delta_bpm > 0 ? "+" : ""}
+                      {formatValue(hr.delta_bpm, 1)} lpm
+                    </span>{" "}
+                    frente a su línea base
+                  </>
+                )}
+              </p>
+              <dl className="mt-5 grid grid-cols-3 gap-3 border-t border-border/60 pt-4">
                 <Stat
                   label="Línea base"
                   value={
-                    assessment.heart_rate.baseline_bpm === null
+                    hr?.baseline_bpm == null
                       ? "Sin datos suficientes"
-                      : `${formatValue(assessment.heart_rate.baseline_bpm, 1)} lpm`
-                  }
-                />
-                <Stat
-                  label="Última"
-                  value={
-                    assessment.heart_rate.latest_bpm === null
-                      ? "Sin dato"
-                      : `${formatValue(assessment.heart_rate.latest_bpm)} lpm`
-                  }
-                />
-                <Stat
-                  label="Diferencia"
-                  value={
-                    assessment.heart_rate.delta_bpm === null
-                      ? "Sin dato"
-                      : `${assessment.heart_rate.delta_bpm > 0 ? "+" : ""}${formatValue(assessment.heart_rate.delta_bpm, 1)} lpm`
+                      : `${formatValue(hr.baseline_bpm, 1)} lpm`
                   }
                 />
                 <Stat
                   label="Media"
-                  value={
-                    assessment.heart_rate.mean_bpm === null
-                      ? "Sin dato"
-                      : `${formatValue(assessment.heart_rate.mean_bpm, 1)} lpm`
-                  }
+                  value={hr?.mean_bpm == null ? "Sin dato" : `${formatValue(hr.mean_bpm, 1)} lpm`}
                 />
                 <Stat
                   label="Muestras válidas"
-                  value={`${assessment.heart_rate.valid_samples} de ${assessment.heart_rate.samples}`}
-                />
-                <Stat
-                  label="Muestras sin dato"
-                  value={String(assessment.heart_rate.missing_samples)}
+                  value={`${hr?.valid_samples ?? 0} de ${hr?.samples ?? 0}`}
                 />
               </dl>
             </Card>
@@ -297,8 +294,10 @@ export function CrewMemberScreen({
               <InsightCard
                 insight={assessment.latest_insight}
                 source={
-                  state.sessions.find((s) => s.id === assessment.latest_insight?.session_id)
-                    ?.source ?? null
+                  uniform
+                    ? null
+                    : (state.sessions.find((s) => s.id === assessment.latest_insight?.session_id)
+                        ?.source ?? null)
                 }
               />
             ) : (
@@ -316,6 +315,7 @@ export function CrewMemberScreen({
             now={chartEnd}
             baseline={assessment.heart_rate.baseline_bpm}
             windowMs={chartMs}
+            showSources={!uniform}
           />
 
           <Card className="p-4">
@@ -325,29 +325,14 @@ export function CrewMemberScreen({
             ) : (
               <ul className="mt-3">
                 {assessment.signals.map((signal, i) => (
-                  <SignalRow key={signal.id ?? i} signal={signal} />
+                  <SignalRow
+                    key={`${signal.origin}-${signal.id ?? i}`}
+                    signal={signal}
+                    finding={findingOf(signal)}
+                    showSource={!uniform}
+                  />
                 ))}
               </ul>
-            )}
-          </Card>
-
-          <Card className="p-4">
-            <CardTitle>Hallazgos por modalidad</CardTitle>
-            {assessment.findings.length === 0 ? (
-              <p className="mt-3 text-sm text-muted">Sin hallazgos en este periodo.</p>
-            ) : (
-              modalities.map((modality) => (
-                <div key={modality} className="mt-3">
-                  <h3 className="text-xs font-medium text-muted">{modalityText[modality]}</h3>
-                  <ul className="mt-1">
-                    {assessment.findings
-                      .filter((f) => f.modality === modality)
-                      .map((item) => (
-                        <FindingRow key={item.finding.id} item={item} />
-                      ))}
-                  </ul>
-                </div>
-              ))
             )}
           </Card>
 
@@ -362,15 +347,17 @@ export function CrewMemberScreen({
                     key={alert.id}
                     className="flex flex-wrap items-center gap-2 border-t border-border/50 py-2 first:border-t-0 first:pt-0"
                   >
+                    <span className="text-sm text-text">{alertReasonText(alert.reason)}</span>
                     <Badge variant={priorityVariant[alert.priority]}>
                       {alertPriorityText[alert.priority]}
                     </Badge>
-                    <Badge variant={statusVariant[alert.status]}>
-                      {alertStatusText[alert.status]}
-                    </Badge>
-                    <span className="text-sm text-text">{alertReasonText(alert.reason)}</span>
+                    {alert.status !== "open" && (
+                      <Badge variant={statusVariant[alert.status]}>
+                        {alertStatusText[alert.status]}
+                      </Badge>
+                    )}
                     <a
-                      href={`#/alerts?member=${member.id}`}
+                      href={`#/alertas?member=${member.id}`}
                       className="ml-auto text-sm text-accent-text underline"
                     >
                       Revisar

@@ -171,7 +171,7 @@ describe("Visión", () => {
     fireEvent.click(screen.getByText("Falló").closest("button")!);
     expect(screen.getByText(/El modelo no terminó esta ejecución/)).toBeTruthy();
     expect(screen.queryByText("Línea de tiempo")).toBeNull();
-    expect(screen.getByText("Esta ejecución no incluye un vídeo con el trazado.")).toBeTruthy();
+    expect(screen.queryByText("Vídeo con el trazado")).toBeNull();
   });
 
   it.each([
@@ -349,17 +349,16 @@ describe("Evaluación", () => {
 
     const vision = screen.getByRole("table", { name: /Hallazgos de Visión/ });
     const fall = within(vision).getByRole("row", { name: /Posible caída/ });
-    expect(cells(fall)).toEqual(["fall", "1", "0", "3", "2", "1", "0", "67%"]);
+    expect(cells(fall)).toEqual(["1", "0", "3", "2", "1", "0", "67%"]);
     const abrupt = within(vision).getByRole("row", { name: /Movimiento brusco/ });
-    expect(cells(abrupt)).toEqual(["Ninguno", "0", "0", "1", "0", "0", "1", "Sin revisar"]);
+    expect(cells(abrupt)).toEqual(["Sin escenario", "0", "1", "0", "0", "1", "Sin revisar"]);
     const isolation = within(vision).getByRole("row", { name: /Aislamiento/ });
-    expect(cells(isolation)).toEqual(["isolation", "0", "0", "0", "0", "0", "0", "Sin revisar"]);
+    expect(cells(isolation)).toEqual(["0", "0", "0", "0", "0", "0", "Sin revisar"]);
 
     const audio = screen.getByRole("table", { name: /Hallazgos de Audio/ });
     const phrase = within(audio).getByRole("row", { name: /Frase de alarma explícita/ });
-    expect(cells(phrase)).toEqual(["distress-phrase", "0", "0", "1", "0", "0", "1", "Sin revisar"]);
+    expect(cells(phrase)).toEqual(["0", "0", "1", "0", "0", "1", "Sin revisar"]);
 
-    expect(screen.getAllByText("Entrada simulada")).toHaveLength(2);
     expect(screen.getByText(/1 ejecución simulada completada/)).toBeTruthy();
     expect(screen.getByText(/2 ejecuciones simuladas completadas/)).toBeTruthy();
     expect(screen.getByText(/1 ejecución fallida/)).toBeTruthy();
@@ -402,9 +401,9 @@ describe("Evaluación", () => {
 
     const vision = screen.getByRole("table", { name: /Hallazgos de Visión/ });
     const fall = within(vision).getByRole("row", { name: /Posible caída/ });
-    expect(cells(fall).slice(0, 3)).toEqual(["fall", "2", "1"]);
+    expect(cells(fall).slice(0, 2)).toEqual(["2", "1"]);
     const inactive = within(vision).getByRole("row", { name: /Inactividad prolongada/ });
-    expect(cells(inactive).slice(0, 3)).toEqual(["inactive", "1", "1"]);
+    expect(cells(inactive).slice(0, 2)).toEqual(["1", "1"]);
     expect(
       screen.getByText("1 ejecución de escenarios sin hallazgo esperado. Señales falsas: 2."),
     ).toBeTruthy();
@@ -440,7 +439,7 @@ describe("Evaluación", () => {
     render(<Evaluation crew={store.getSnapshot()} source={source} />);
     expect(screen.queryByText("Sin ejecuciones simuladas")).toBeNull();
     expect(screen.getByText(counted)).toBeTruthy();
-    expect(screen.getAllByText("Entrada simulada")).toHaveLength(2);
+    expect(screen.getAllByRole("table")).toHaveLength(2);
   });
 
   it("says there is nothing to evaluate without runs", () => {

@@ -1,4 +1,5 @@
 import type { components } from "../contract/api";
+import { PageHead } from "../components/PageHead";
 import { Card, CardTitle } from "../components/ui/card";
 import { reasonCodeText, ruleThresholdText } from "../lib/copy";
 
@@ -44,14 +45,15 @@ const rules: ReasonCode[] = [
   "BASELINE_PENDING",
 ];
 
-export function Science({ replayOnly }: { replayOnly: boolean }) {
+export function Metodo({ replayOnly }: { replayOnly: boolean }) {
   return (
-    <div className="space-y-4">
-      <p className="max-w-3xl text-sm text-muted">
-        ASTRA señala patrones para que una persona los revise. No emite diagnósticos.
-      </p>
+    <div className="space-y-8">
+      <PageHead
+        title="Método"
+        note="ASTRA señala patrones para que una persona los revise. No emite diagnósticos."
+      />
       <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
-        <Card className="p-4">
+        <Card>
           <CardTitle>Qué mide cada sensor</CardTitle>
           <dl className="mt-3 divide-y divide-border">
             {sensors.map((sensor) => (
@@ -65,7 +67,7 @@ export function Science({ replayOnly }: { replayOnly: boolean }) {
             ))}
           </dl>
         </Card>
-        <Card className="h-fit p-4">
+        <Card className="h-fit">
           <CardTitle>Qué no mide</CardTitle>
           <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-muted">
             {notMeasured.map((line) => (
@@ -74,7 +76,7 @@ export function Science({ replayOnly }: { replayOnly: boolean }) {
           </ul>
         </Card>
       </div>
-      <Card className="p-4">
+      <Card>
         <CardTitle>Reglas que marcan un patrón para revisar</CardTitle>
         <p className="mt-1 text-sm text-muted">
           Cada umbral es una señal para que una persona revise. No es un límite clínico.
@@ -88,7 +90,7 @@ export function Science({ replayOnly }: { replayOnly: boolean }) {
           </thead>
           <tbody>
             {rules.map((code) => (
-              <tr key={code} className="border-b border-border/50 align-top last:border-0">
+              <tr key={code} className="border-b border-border/60 align-top last:border-0">
                 <td className="py-2 pr-4">{reasonCodeText[code]}</td>
                 <td className="py-2 text-muted">{ruleThresholdText[code]}</td>
               </tr>
@@ -97,7 +99,7 @@ export function Science({ replayOnly }: { replayOnly: boolean }) {
         </table>
       </Card>
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card className="h-fit p-4">
+        <Card className="h-fit">
           <CardTitle>Límites de una lectura en la muñeca</CardTitle>
           <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-muted">
             {limits.map((line) => (
@@ -105,7 +107,7 @@ export function Science({ replayOnly }: { replayOnly: boolean }) {
             ))}
           </ul>
         </Card>
-        <Card className="h-fit p-4">
+        <Card className="h-fit">
           <CardTitle>De dónde vienen los datos</CardTitle>
           <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-muted">
             <li>Una sesión simulada viene del simulador de ASTRA y se marca como Simulado.</li>
