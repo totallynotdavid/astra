@@ -4,12 +4,12 @@ import type { ComponentProps } from "react";
 import { cn } from "../../lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex h-10 items-center justify-center gap-2 rounded-sm px-4 text-base font-medium whitespace-nowrap transition-colors duration-150 active:scale-[0.98] disabled:pointer-events-none disabled:text-faint",
+  "inline-flex h-10 items-center justify-center gap-2 rounded-full px-5 text-sm font-medium whitespace-nowrap transition-[background-color,color,box-shadow,scale] duration-150 ease-out active:scale-[0.97] disabled:pointer-events-none disabled:text-faint",
   {
     variants: {
       variant: {
-        default: "bg-accent text-neutral-1 hover:bg-accent-text",
-        outline: "border border-border-strong text-text hover:bg-raised",
+        default: "bg-accent text-on-accent hover:bg-neutral-9",
+        outline: "bg-surface text-text shadow-raised hover:bg-raised",
         ghost: "text-muted hover:bg-raised hover:text-text",
       },
     },

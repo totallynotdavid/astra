@@ -1,5 +1,4 @@
 import { EmptyView, ErrorView, LoadingView } from "../components/StateView";
-import { Badge } from "../components/ui/badge";
 import { Card, CardTitle } from "../components/ui/card";
 import type { CrewState } from "../data/crew";
 import { evaluate, runsOf, type LabEvaluation, type LabelTally } from "../data/runs";
@@ -23,10 +22,7 @@ function Lab({ evaluation }: { evaluation: LabEvaluation }) {
   const quiet = scenarios.filter((scenario) => scenario.label === null);
   return (
     <Card className="p-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <CardTitle>{labTitle[evaluation.modality]}</CardTitle>
-        <Badge variant="accent">Entrada simulada</Badge>
-      </div>
+      <CardTitle>{labTitle[evaluation.modality]}</CardTitle>
       <p className="mt-1 text-sm text-muted">
         {plural(
           evaluation.simulated,
@@ -35,7 +31,7 @@ function Lab({ evaluation }: { evaluation: LabEvaluation }) {
         )}
         : {evaluation.withFindings} con hallazgos y {evaluation.withoutFindings} sin hallazgos.
         {quiet.length > 0 &&
-          ` Sin hallazgos es lo esperado en ${quiet.map((scenario) => scenario.name).join(", ")}.`}
+          ` Sin hallazgos es lo esperado en ${quiet.map((scenario) => scenario.title).join(", ")}.`}
       </p>
       {quiet.length > 0 && (
         <p className="mt-1 text-sm text-muted">
@@ -70,11 +66,8 @@ function Lab({ evaluation }: { evaluation: LabEvaluation }) {
               <th scope="col" className="py-2 pr-3 font-normal">
                 Etiqueta
               </th>
-              <th scope="col" className="py-2 pr-3 font-normal">
-                Escenario que la planta
-              </th>
               <th scope="col" className="py-2 pr-3 text-right font-normal">
-                Ejecuciones del escenario
+                Ejecuciones
               </th>
               <th scope="col" className="py-2 pr-3 text-right font-normal">
                 Omitidos
@@ -92,7 +85,7 @@ function Lab({ evaluation }: { evaluation: LabEvaluation }) {
                 Sin revisar
               </th>
               <th scope="col" className="py-2 text-right font-normal">
-                Confirmados entre los revisados
+                Confirmados
               </th>
             </tr>
           </thead>
@@ -102,10 +95,13 @@ function Lab({ evaluation }: { evaluation: LabEvaluation }) {
                 <th scope="row" className="py-2 pr-3 text-left font-normal text-text">
                   {findingLabelText[row.label]}
                 </th>
-                <td className="py-2 pr-3 text-muted">
-                  {row.scenarios.length > 0 ? row.scenarios.join(", ") : "Ninguno"}
+                <td className="py-2 pr-3 text-right tabular-nums">
+                  {row.scenarios.length > 0 ? (
+                    row.scenarioRuns
+                  ) : (
+                    <span className="text-muted">Sin escenario</span>
+                  )}
                 </td>
-                <td className="py-2 pr-3 text-right tabular-nums">{row.scenarioRuns}</td>
                 <td className="py-2 pr-3 text-right tabular-nums">{row.missed}</td>
                 <td className="py-2 pr-3 text-right tabular-nums">{row.found}</td>
                 <td className="py-2 pr-3 text-right tabular-nums">{row.confirmed}</td>
@@ -147,10 +143,10 @@ export function Evaluation({ crew, source }: { crew: CrewState; source: AstraSou
       <Card className="p-4">
         <CardTitle>Cómo se calcula</CardTitle>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted">
-          <li>Todas las cifras vienen de entradas simuladas. Ninguna es de una persona real.</li>
+          <li>Solo se cuentan las ejecuciones con entrada simulada y completadas.</li>
           <li>
             Un hallazgo es verdadero si el médico lo confirmó y falso si lo descartó. Los demás
-            esperan revisión.
+            esperan revisión. Confirmados es la parte de los revisados que el médico confirmó.
           </li>
           <li>
             Cada ejecución guarda el escenario simulado que la generó. Un escenario omite su

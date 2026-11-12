@@ -60,30 +60,29 @@ describe("the published demo, read from static files with no server", () => {
   it("walks the crew overview, a profile, an alert with its trail and each lab screen", async () => {
     await page.goto(url);
 
-    const cards = page.getByRole("link", { name: /^AZ-\d/ });
+    const cards = page.getByRole("link", { name: /AZ-\d/ });
     await cards.first().waitFor();
     await count(cards, 4);
-    await count(page.getByText("Grabación"), 4);
-    await see(page.getByText("Simulado").first());
+    await see(page.getByText("Todos los datos de este sitio son simulados."));
 
     await page.getByRole("link", { name: /Valeria Ramos/ }).click();
     await page.getByRole("heading", { name: "Valeria Ramos" }).waitFor();
     await see(page.getByText("Patrón de posible caída"));
-    await see(page.getByText("Hallazgos por modalidad"));
+    await see(page.getByText("Patrones señalados"));
     await see(page.getByText(/Gráfica de frecuencia cardíaca de los últimos 4 minutos/));
     await count(page.getByLabel("Periodo de la evaluación"), 0);
 
-    await open("#/alerts");
+    await open("#/alertas");
     await page.getByRole("heading", { name: "Historial de revisiones" }).waitFor();
     await see(page.getByText("Ejemplo de revisión: el médico vio"));
     await count(page.getByRole("button", { name: "Registrar revisión" }), 0);
 
-    await open("#/vision");
+    await open("#/laboratorios/vision");
     await page.getByRole("heading", { name: "Línea de tiempo" }).waitFor();
     await see(page.getByText("Inactividad prolongada").first());
     await see(page.getByText("La entrada es simulada").first());
 
-    await open("#/audio");
+    await open("#/laboratorios/audio");
     await page.getByRole("heading", { name: "Línea de tiempo" }).waitFor();
     await see(page.getByText("Interrupciones frecuentes"));
     await page
@@ -92,7 +91,7 @@ describe("the published demo, read from static files with no server", () => {
       .click();
     await see(page.getByText("Frase de alarma explícita"));
 
-    await open("#/evaluation");
+    await open("#/laboratorios/evaluacion");
     await page.getByRole("heading", { name: "Cómo se calcula" }).waitFor();
     await count(page.getByRole("table"), 2);
     await count(page.getByText("Señales falsas: 0."), 2);

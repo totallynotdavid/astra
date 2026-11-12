@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { components } from "../contract/api";
-import { cardBadges, linkView, openAlerts, readingFreshness, replayPhase } from "./status";
+import { linkView, openAlerts, readingFreshness, replayPhase } from "./status";
 
 type DeviceStatus = components["schemas"]["DeviceStatus"];
 type Event = components["schemas"]["Event"];
@@ -68,33 +68,6 @@ describe("readingFreshness", () => {
   it("is current when there is no device status or no reading", () => {
     expect(readingFreshness(null, liveReading, "open")).toBe("current");
     expect(readingFreshness(device("stale"), null, "open")).toBe("current");
-  });
-});
-
-describe("cardBadges", () => {
-  it.each(["LIVE", "REPLAY", "HISTORICAL", "SYNTHETIC"] as const)(
-    "shows the reading's %s source plus the outdated marker on a stale link",
-    (source) => {
-      expect(cardBadges(device("stale"), { ...liveReading, source }, "open")).toEqual({
-        source,
-        outdated: true,
-      });
-    },
-  );
-
-  it("shows the source plus the outdated marker while the channel is reconnecting", () => {
-    expect(cardBadges(device("connected"), liveReading, "connecting")).toEqual({
-      source: "LIVE",
-      outdated: true,
-    });
-  });
-
-  it("shows only the source on a connected link and no badge without a reading", () => {
-    expect(cardBadges(device("connected"), liveReading, "open")).toEqual({
-      source: "LIVE",
-      outdated: false,
-    });
-    expect(cardBadges(device("stale"), null, "open")).toEqual({ source: null, outdated: false });
   });
 });
 

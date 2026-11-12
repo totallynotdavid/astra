@@ -60,22 +60,6 @@ export function readingFreshness(
   return device.status === "connected" ? "current" : "outdated";
 }
 
-export interface CardBadges {
-  source: Source | null;
-  outdated: boolean;
-}
-
-export function cardBadges(
-  device: DeviceStatus | null,
-  reading: Reading | null,
-  channel: ChannelState,
-): CardBadges {
-  return {
-    source: reading?.source ?? null,
-    outdated: readingFreshness(device, reading, channel) === "outdated",
-  };
-}
-
 export function primaryDeviceId(devices: DeviceStatus[], readings: Reading[]): string | null {
   if (devices.length > 0) return devices[0]?.device_id ?? null;
   let latest: Reading | null = null;

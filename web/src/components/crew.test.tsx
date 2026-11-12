@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { components } from "../contract/api";
@@ -161,9 +161,11 @@ describe("alert list", () => {
       />,
     );
     expect(screen.getAllByText("Registrar revisión", { selector: "h3" })).toHaveLength(2);
-    fireEvent.change(screen.getByLabelText("Filtrar por persona"), {
-      target: { value: screen.getByRole("option", { name: "Sin asignar" }).getAttribute("value") },
-    });
+    fireEvent.click(
+      within(screen.getByRole("group", { name: "Filtrar por persona" })).getByRole("button", {
+        name: "Sin asignar",
+      }),
+    );
     expect(screen.getAllByText("Registrar revisión", { selector: "h3" })).toHaveLength(1);
     expect(screen.getByText("UNOWNED_ALERT")).toBeTruthy();
     expect(screen.queryByText("Patrón de posible caída")).toBeNull();

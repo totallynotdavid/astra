@@ -27,8 +27,8 @@ ASTRA_SERIAL_PORT=/dev/pts/3 mise run demo
 
 Open `http://127.0.0.1:8000` and sign in as `admin` with `astra-admin`.
 `mise run demo` creates the [demo accounts](auth.md#demo-accounts), one per
-role. The dashboard has four screens in the navigation bar: Resumen, En vivo,
-Análisis and Repetición ([web.md](web.md) describes them).
+role. The navigation bar offers Tripulación, Alertas, Señales, Laboratorios,
+Sesiones and Método ([web.md](web.md) describes them).
 
 ## Scenarios
 
@@ -51,8 +51,8 @@ cd server && uv run python -m astra.simulator --scenario normal --seed 1 --pty -
 ```
 
 Three minutes of a resting wearer at about 72 bpm. The heart rate is null for
-the first five seconds (`warming_up`), then stays near 72. Show Resumen and En
-vivo: the link pill reads conectado, the charts fill in, no alert appears.
+the first five seconds (`warming_up`), then stays near 72. Show Señales: the
+link pill reads conectado, the charts fill in, no alert appears.
 
 ### hr-above-baseline
 
@@ -61,8 +61,8 @@ cd server && uv run python -m astra.simulator --scenario hr-above-baseline --see
 ```
 
 At `seq` 140 the heart rate climbs to about 108 bpm. After five samples above
-the personal baseline, Análisis shows a `review` insight with
-`HR_ABOVE_PERSONAL_BASELINE` and Resumen lists the open alert.
+the personal baseline, Señales shows a `review` insight with
+`HR_ABOVE_PERSONAL_BASELINE` and lists the open alert.
 
 ### fall
 
@@ -72,7 +72,7 @@ cd server && uv run python -m astra.simulator --scenario fall --seed 1 --pty --s
 
 At `seq` 130 acceleration drops under 2 m/s² and peaks near 30 m/s² in the same
 second; the wearer then goes still. Two still samples later the insight flags
-`FALL_PATTERN` (about `seq` 133) and an alert opens. Show Análisis.
+`FALL_PATTERN` (about `seq` 133) and an alert opens. Show Señales and Alertas.
 
 ### lost-contact
 
@@ -81,7 +81,7 @@ cd server && uv run python -m astra.simulator --scenario lost-contact --seed 1 -
 ```
 
 From `seq` 90 to 129 the PPG contact is lost: the heart rate is `null` with
-`no_contact`, En vivo shows a gap in the line (never a point at zero), and each
+`no_contact`, Señales shows a gap in the line (never a point at zero), and each
 insight carries `PPG_CONTACT_LOST`.
 
 ### disconnect
@@ -106,7 +106,7 @@ the server opens a new session. Nothing else is needed.
 
 ## Replay a session
 
-On Repetición, pick a stored session and a speed, and start the replay. Only an
+On Sesiones, pick a speed and press Reproducir on a stored session. Only an
 admin can. Every replayed reading is labelled `REPLAY` and is never shown as
 live. The same call over the API, with the session cookie from a login:
 

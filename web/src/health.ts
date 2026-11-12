@@ -2,6 +2,12 @@ import type { Health } from "./contract";
 
 export type Tone = "success" | "review" | "critical";
 
+export const toneClass: Record<Tone, string> = {
+  success: "text-success",
+  review: "text-review",
+  critical: "text-critical",
+};
+
 export interface HealthLine {
   label: string;
   value: string;

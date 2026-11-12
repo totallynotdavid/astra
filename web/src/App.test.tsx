@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { act, cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { App } from "./App";
@@ -44,48 +44,66 @@ function setup() {
   return { store, crew, source };
 }
 
-describe("routes with a crew", () => {
+function render_app(role: UserRole = "doctor", memberId: string | null = null) {
+  const { store, crew, source } = setup();
+  render(
+    <App
+      store={store}
+      crew={crew}
+      source={source}
+      user={userWith(role, memberId)}
+      onLogout={null}
+    />,
+  );
+  return { store, crew, source };
+}
+
+const nav = () =>
+  within(screen.getByRole("navigation", { name: "Pantallas" }))
+    .getAllByRole("link")
+    .map((link) => link.textContent);
+
+describe("routes", () => {
   it("lands on the crew overview at the root", () => {
     location.hash = "#/";
-    const { store, crew, source } = setup();
-    render(
-      <App store={store} crew={crew} source={source} user={userWith("doctor")} onLogout={null} />,
-    );
+    render_app();
     expect(screen.getByText("Valeria Ramos")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Tripulación" })).toBeTruthy();
   });
 
-  it("keeps the single-wearer summary reachable at #/resumen", async () => {
-    location.hash = "#/resumen";
-    const { store, crew, source } = setup();
-    render(
-      <App store={store} crew={crew} source={source} user={userWith("doctor")} onLogout={null} />,
-    );
+  it.each([
+    ["#/crew", "#/"],
+    ["#/resumen", "#/senales"],
+    ["#/live", "#/senales"],
+    ["#/insights", "#/senales"],
+    ["#/alerts", "#/alertas"],
+    ["#/vision", "#/laboratorios/vision"],
+    ["#/audio", "#/laboratorios/audio"],
+    ["#/evaluation", "#/laboratorios/evaluacion"],
+    ["#/replay", "#/sesiones"],
+    ["#/science", "#/metodo"],
+  ] as const)("redirects %s to %s", async (from, to) => {
+    location.hash = from;
+    render_app("admin");
     await act(async () => {});
-    expect(screen.getByText("Todavía no hay lecturas")).toBeTruthy();
-    expect(screen.queryByText("Valeria Ramos")).toBeNull();
-    expect(screen.getByRole("link", { name: "Resumen" }).getAttribute("href")).toBe("#/resumen");
-    expect(screen.getByRole("link", { name: "Resumen" }).getAttribute("aria-current")).toBe("page");
+    expect(location.hash).toBe(to);
+  });
+
+  it("keeps the member query when redirecting #/alerts", async () => {
+    location.hash = "#/alerts?member=m1";
+    render_app("admin");
+    await act(async () => {});
+    expect(location.hash).toBe("#/alertas?member=m1");
   });
 });
 
 describe("roles", () => {
-  const nav = () => screen.getAllByRole("link").map((link) => link.textContent);
-
   it("sends an astronaut to their own profile and shows a short menu", async () => {
     location.hash = "#/";
-    const { store, crew, source } = setup();
-    render(
-      <App
-        store={store}
-        crew={crew}
-        source={source}
-        user={userWith("astronaut", "m1")}
-        onLogout={null}
-      />,
-    );
+    render_app("astronaut", "m1");
     await act(async () => {});
     expect(location.hash).toBe("#/crew/m1");
-    expect(nav()).toEqual(["Mi perfil", "Alertas", "En vivo", "Análisis", "Ciencia y datos"]);
+    expect(nav()).toEqual(["Mi perfil", "Alertas", "Señales", "Método"]);
     expect(screen.getByText("Astronauta")).toBeTruthy();
   });
 
@@ -93,19 +111,18 @@ describe("roles", () => {
     ["admin", true],
     ["doctor", false],
     ["jury", false],
-  ] as const)("shows the replay screen to %s: %s", (role, replay) => {
-    const { store, crew, source } = setup();
-    render(<App store={store} crew={crew} source={source} user={userWith(role)} onLogout={null} />);
-    expect(nav().includes("Repetición")).toBe(replay);
+  ] as const)("shows the sessions screen to %s: %s", (role, sessions) => {
+    render_app(role);
+    expect(nav().includes("Sesiones")).toBe(sessions);
   });
 
-  it("keeps replay for everyone when the source has no server", () => {
+  it("keeps sessions for everyone when the source has no server", () => {
     const { store, crew } = setup();
     const source = { replayOnly: true, crew: null } as AstraSource;
     render(
       <App store={store} crew={crew} source={source} user={userWith("jury")} onLogout={null} />,
     );
-    expect(nav().includes("Repetición")).toBe(true);
+    expect(nav().includes("Sesiones")).toBe(true);
   });
 
   it.each([
@@ -119,9 +136,11 @@ describe("roles", () => {
     render(
       <App store={store} crew={crew} source={source} user={userWith("jury")} onLogout={null} />,
     );
+    await act(async () => {});
     expect(screen.getByText(title)).toBeTruthy();
     cleanup();
 
+    location.hash = hash;
     render(
       <App
         store={store}

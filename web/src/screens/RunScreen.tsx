@@ -9,11 +9,15 @@ import { Card, CardTitle } from "../components/ui/card";
 import type { CrewState, CrewStore } from "../data/crew";
 import { runsOf, timeline } from "../data/runs";
 import type { AstraSource, ModelRun } from "../data/source";
-import { runStatusText } from "../lib/copy";
+import { findingLabelText, runStatusText } from "../lib/copy";
 import { formatDateTime, formatDuration } from "../lib/format";
 import type { LabModality } from "../lib/scenarios";
 
-const statusVariant = { completed: "success", failed: "critical", unavailable: "review" } as const;
+const statusVariant = {
+  completed: "success",
+  failed: "critical",
+  unavailable: "review",
+} as const;
 
 const stateText = {
   failed: "El modelo no terminó esta ejecución. No hay hallazgos que revisar.",
@@ -27,14 +31,20 @@ export interface RunScreenCopy {
   notice: string;
 }
 
+const modelOf = (run: ModelRun) => `${run.model_name} ${run.model_version}`;
+
 function RunItem({
   run,
   selected,
   onSelect,
+  showModel,
+  showSource,
 }: {
   run: ModelRun;
   selected: boolean;
   onSelect: () => void;
+  showModel: boolean;
+  showSource: boolean;
 }) {
   return (
     <li className="border-t border-border/50 first:border-t-0">
@@ -46,16 +56,17 @@ function RunItem({
           selected ? "bg-raised" : "hover:bg-raised/60"
         }`}
       >
-        <span className="text-sm text-text">{formatDateTime(run.started_at)}</span>
-        <span className="text-xs text-muted">
-          {run.model_name} {run.model_version}
-        </span>
+        <span className="text-sm text-text tabular-nums">{formatDateTime(run.started_at)}</span>
+        {showModel && <span className="text-xs text-muted">{modelOf(run)}</span>}
         <span className="flex flex-wrap items-center gap-2">
-          <SourceBadge source={run.source} />
-          <Badge variant={statusVariant[run.status]}>{runStatusText[run.status]}</Badge>
-          <span className="text-xs text-muted tabular-nums">
-            {run.findings.length === 1 ? "1 hallazgo" : `${run.findings.length} hallazgos`}
-          </span>
+          {showSource && <SourceBadge source={run.source} />}
+          {run.status === "completed" ? (
+            <span className="text-xs text-muted tabular-nums">
+              {run.findings.length === 1 ? "1 hallazgo" : `${run.findings.length} hallazgos`}
+            </span>
+          ) : (
+            <Badge variant={statusVariant[run.status]}>{runStatusText[run.status]}</Badge>
+          )}
         </span>
       </button>
     </li>
@@ -95,6 +106,8 @@ export function RunScreen({
   const run = runs.find((candidate) => candidate.id === selectedId) ?? runs[0];
   if (!run) return null;
   const lanes = timeline(run, crew.members);
+  const mixedModels = new Set(runs.map(modelOf)).size > 1;
+  const mixedSources = new Set(runs.map((candidate) => candidate.source)).size > 1;
 
   return (
     <div className="grid gap-4 lg:grid-cols-[17rem_1fr]">
@@ -107,6 +120,8 @@ export function RunScreen({
               run={candidate}
               selected={candidate.id === run.id}
               onSelect={() => setSelectedId(candidate.id)}
+              showModel={mixedModels}
+              showSource={mixedSources}
             />
           ))}
         </ul>
@@ -114,11 +129,11 @@ export function RunScreen({
       <div className="min-w-0 space-y-4">
         <Card className="p-4">
           <div className="flex flex-wrap items-center gap-2">
-            <CardTitle>
-              {run.model_name} {run.model_version}
-            </CardTitle>
-            <SourceBadge source={run.source} />
-            <Badge variant={statusVariant[run.status]}>{runStatusText[run.status]}</Badge>
+            <CardTitle>{modelOf(run)}</CardTitle>
+            {run.source !== "SYNTHETIC" && <SourceBadge source={run.source} />}
+            {run.status !== "completed" && (
+              <Badge variant={statusVariant[run.status]}>{runStatusText[run.status]}</Badge>
+            )}
           </div>
           <p className="mt-1 text-sm text-muted">
             Inicio {formatDateTime(run.started_at)}. Duración{" "}
@@ -164,6 +179,7 @@ export function RunScreen({
                               model_name: run.model_name,
                             }}
                             members={crew.members}
+                            title={findingLabelText[finding.label]}
                             onPatch={
                               reviewer
                                 ? (patch) => store.patchFinding(api, finding.id, patch)
