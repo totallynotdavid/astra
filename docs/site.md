@@ -102,12 +102,15 @@ mise run test:e2e
 
 ## What the jury sees
 
+Tripulación, Señales, the profile and Sesiones say once in their header that
+every value on the site is simulated, so no single value carries a source
+label.
+
 - **Tripulación**: one card per person, with the latest reading and the open
-  alerts. The pill reads "Grabación" because the device is a recording, not a
-  live link.
-- **Profile**: the assessment of the whole recording, the heart rate against
-  the baseline, the findings of each modality and the public NASA profile,
-  labelled as public reference data. The period selector is hidden, because the
+  alerts. A recorded device shows no link pill, because it is not a live link.
+- **Perfil**: the assessment of the whole recording, the latest heart rate
+  against the baseline, the flagged patterns and model findings, and the public
+  NASA profile in its own block. The period selector is hidden, because the
   file holds one recording.
 - **Alertas**: every alert with its findings and, for the fall, the review
   trail. The review form does not appear.
@@ -116,11 +119,10 @@ mise run test:e2e
 - **Evaluación**: the findings of the simulated runs per label, the runs a
   scenario planted and missed, and the false signals. Nothing is confirmed, so
   every finding is waiting for review.
-- **Repetición**: the exported sessions, including the four crew sessions.
-  Starting one plays its readings, insights and events in order, and the link
-  pill in the header shows the replay state.
-- **Ciencia y datos**: the sensors, the rules and the limits of a wrist
-  reading.
+- **Sesiones**: the exported sessions, including the four crew sessions.
+  Reproducir plays its readings, insights and events in order, and the pill in
+  the header shows the replay state.
+- **Método**: the sensors, the rules and the limits of a wrist reading.
 
 The screens are the ones the [web app](web.md) describes. The static source
 refuses a review or a finding change.

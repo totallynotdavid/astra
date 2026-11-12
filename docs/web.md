@@ -6,72 +6,88 @@ port 5173 with a proxy to the API.
 
 ## Screens
 
-The app has eleven screens, reached from the navigation bar or directly by hash
-route.
+The navigation bar offers six destinations: Tripulación, Alertas, Señales,
+Laboratorios, Sesiones and, as a quieter link, Método. The old hash routes
+redirect to the new ones, so links elsewhere keep working.
 
-- **Tripulación** (`#/crew`): one card per crew member with their code, name and
-  role, their device's connection status, the latest heart rate and contact
-  temperature with each `source`, and the count and highest priority of their
-  pending alerts. Each card links to the member's profile. When a crew exists
-  this is also the landing screen at `#/`; without a crew, `#/` shows the
-  single-wearer overview.
-- **Resumen** (`#/`, or `#/resumen` when a crew exists): the wearer's current
-  heart rate, contact temperature and motion, the device link, the last insight
-  and the open alerts.
-- **En vivo** (`#/live`): a chart of the last 10 minutes of each measurement. A
-  null value is a gap in the line, never a point at zero.
-- **Análisis** (`#/insights`): each insight with its reason codes and its
-  limitations in plain Spanish, and the event list.
-- **Repetición** (`#/replay`): the stored sessions, and a control that starts a
-  replay at a chosen speed.
-- **Ciencia y datos** (`#/science`): what each sensor measures, what ASTRA does
-  not measure, each rule with its threshold worded as a review signal, and the
-  limits of a wrist reading. It shows in every source.
-- **Alertas** (`#/alerts`): the open and acknowledged alerts, filterable by crew
-  member and priority. Each alert shows the findings behind it, a review form
-  that posts to `POST /api/v1/alerts/{id}/reviews` with a status, a comment and
-  an optional action, recorded under the signed-in user's name, and the review
-  trail below, reloaded every 10 seconds and whenever an alert changes status.
-  Only an admin or a doctor sees the form and the finding controls. The filter
-  offers "Sin asignar" for alerts with no crew member. A finding can be
-  confirmed or dismissed, and an audio finding reassigned to another member,
-  through `PATCH /api/v1/findings/{id}`.
+- **Tripulación** (`#/`): one card per crew member that leads with their name
+  and role, their device's connection status, the latest heart rate and contact
+  temperature, and the count and highest priority of their pending alerts. Each
+  card links to the member's profile. A line above the cards names any part of
+  the system that is not healthy. Without a crew, `#/` shows Señales. The
+  old `#/crew` route redirects here.
+- **Alertas** (`#/alertas`, old `#/alerts`): the open and acknowledged alerts,
+  filterable by crew member and priority. Each alert shows the findings behind
+  it, a review form that posts to `POST /api/v1/alerts/{id}/reviews` with a
+  status, a comment and an optional action, recorded under the signed-in user's
+  name, and the review trail below, reloaded every 10 seconds and whenever an
+  alert changes status. Only an admin or a doctor sees the form and the finding
+  controls. The filter offers "Sin asignar" for alerts with no crew member. A
+  finding can be confirmed or dismissed, and an audio finding reassigned to
+  another member, through `PATCH /api/v1/findings/{id}`.
+- **Señales** (`#/senales`): the wearer's current heart rate, contact
+  temperature and motion, the charts of the last 10 minutes, the latest insight
+  of the wearer with its reason codes and limitations in plain Spanish, and the
+  ten insights before it as one-line rows. A side column holds the system
+  status (the device, its last reading, the sensor contact, abrupt motion, and
+  the sensor link, the analysis model and storage, each coloured by state), the
+  open alerts and the ten latest events. On a narrow screen the side column comes
+  first, after the metrics. The system status shows even before the first
+  reading. A null value is a gap in the line, never a point at zero. The old
+  `#/resumen`, `#/live` and `#/insights` routes redirect here.
+- **Laboratorios** (`#/laboratorios`): three tabs for the model labs. Old
+  routes redirect to each tab.
+
+  - **Visión** (`#/laboratorios/vision`, old `#/vision`): the video model runs,
+    newest first. A run shows a timeline per crew member of its findings
+    (possible falls, abrupt movements, inactivity, isolation and interaction),
+    then each finding with its confidence, time span and evidence. When a
+    finding has a `media_ref` that is an http or https URL, the screen plays it
+    as the rendered overlay. Any other reference is shown as text.
+  - **Audio** (`#/laboratorios/audio`, old `#/audio`): the audio model runs,
+    with the same timeline for silences, interruptions, isolation and explicit
+    phrases, and each finding's evidence. A finding with no crew member sits
+    under "Sin asignar", and a doctor or admin assigns it to a member through
+    `PATCH /api/v1/findings/{id}`. The run carries no talk time or speech
+    turns, so the screen cannot show the share of talk time of each person and
+    says so.
+  - **Evaluación** (`#/laboratorios/evaluacion`, old `#/evaluation`): for each
+    lab, the findings of its simulated runs per label, with the review outcome
+    the doctor recorded. A finding the doctor confirmed counts as true and one
+    the doctor dismissed counts as false. A simulated run stores the name of
+    its scenario, so the screen also counts, per label, the runs of the
+    scenario that plants it and how many of them missed it; a label no scenario
+    plants says "Sin escenario". A run of a scenario that plants nothing counts
+    toward the false signals, one per finding it produced. A run with no known
+    scenario counts its findings but not the missed or the false signals. Runs
+    from another source and failed runs are counted apart. Each run in Visión
+    and Audio states its own source. The Spanish scenario titles live in
+    [`web/src/lib/scenarios.ts`](../web/src/lib/scenarios.ts).
+
+  Laboratorios does not appear for an astronaut. In Visión and Audio the
+  finding controls follow the rule of Alertas: only an admin or a doctor sees
+  them.
+- **Sesiones** (`#/sesiones`, old `#/replay`): the stored sessions, a speed
+  control and a "Reproducir" button per finished session.
+- **Método** (`#/metodo`, old `#/science`): what each sensor measures, what
+  ASTRA does not measure, each rule with its threshold worded as a review
+  signal, and the limits of a wrist reading. It shows in every source.
 - **Perfil** (`#/crew/<member>`): the member's multimodal assessment from
-  `GET /api/v1/crew/{id}/assessment` for a chosen period: the heart-rate trend
-  against the baseline, the latest insight, the findings of every modality with
-  confidence and evidence, the open alerts and the signals with their data
-  quality. The public NASA profile, when present, sits in its own block labelled
-  as public reference data, never mixed with the wearer's data.
-- **Visión** (`#/vision`): the video model runs, newest first. A run shows a
-  timeline per crew member of its findings (possible falls, abrupt movements,
-  inactivity, isolation and interaction), then each finding with its
-  confidence, time span and evidence. When a finding has a `media_ref` that is
-  an http or https URL, the screen plays it as the rendered overlay. Any other
-  reference is shown as text.
-- **Audio** (`#/audio`): the audio model runs, with the same timeline for
-  silences, interruptions, isolation and explicit phrases, and each finding's
-  evidence. A finding with no crew member sits under "Sin asignar", and a
-  doctor or admin assigns it to a member through `PATCH /api/v1/findings/{id}`.
-  The run carries no talk time or speech turns, so the screen cannot show the
-  share of talk time of each person and says so.
-- **Evaluación** (`#/evaluation`): for each lab, the findings of its simulated
-  runs per label, with the review outcome the doctor recorded. A finding the
-  doctor confirmed counts as true and one the doctor dismissed counts as false.
-  Each label lists the simulator scenario that plants it. A simulated run
-  stores the name of its scenario, so the screen also counts, per label, the
-  runs of the scenarios that plant it and how many of them missed it. A run of
-  a scenario that plants nothing counts toward the false signals, one per
-  finding it produced. A run with no known scenario counts its findings but
-  not the missed or the false signals. Runs from another source and failed runs
-  are counted apart. Every number is labelled as from simulated input.
+  `GET /api/v1/crew/{id}/assessment` for a chosen period: the latest heart rate
+  and its difference from the baseline, the latest insight, the heart-rate
+  trend, the flagged patterns, the open alerts and the public profile. The
+  server lists every run finding among the signals, so "Patrones señalados"
+  holds both: a rule pattern with its variables and data quality, and a model
+  finding with its confidence, evidence, modality and model. The public NASA
+  profile, when present, sits in its own block that says it is public agency
+  data, never mixed with the wearer's data.
 
-Visión, Audio and Evaluación do not appear for an astronaut. In Visión and
-Audio the finding controls follow the rule of Alertas: only an admin or a doctor
-sees them.
-
-Every reading shows its `source`. A `REPLAY`, `HISTORICAL` or `SYNTHETIC`
-reading is labelled as such and never shown as live. The Spanish text for each
-reason code, missing reason, source and status lives in
+A `source` label appears once per scope: when every reading on a screen or a
+card shares one source, the screen or card shows it once; only where sources
+mix does each value carry its own label. A `REPLAY`, `HISTORICAL` or
+`SYNTHETIC` reading is labelled as such and never shown as live. The published
+site states once that its data is simulated. The Spanish text for each reason
+code, missing reason, source and status lives in
 [`web/src/lib/copy.ts`](../web/src/lib/copy.ts).
 
 ## Sign in and roles
@@ -86,12 +102,12 @@ sesión** button. When the server answers 401 or closes the WebSocket with code
 The role decides what the screens offer. The server enforces the same rules; the
 web only hides what the user cannot use.
 
-| Role        | Screens and actions                                                  |
-| ----------- | -------------------------------------------------------------------- |
-| `admin`     | Every screen, the replay control and the review form.                |
-| `doctor`    | Every screen except Repetición, and the review form.                 |
-| `astronaut` | Their own profile, Alertas, En vivo, Análisis and Ciencia y datos.   |
-| `jury`      | Every screen except Repetición. No review form and no finding edits. |
+| Role        | Screens and actions                                                |
+| ----------- | ------------------------------------------------------------------ |
+| `admin`     | Every screen, the replay control and the review form.              |
+| `doctor`    | Every screen except Sesiones, and the review form.                 |
+| `astronaut` | Their own profile, Alertas, Señales and Método.                    |
+| `jury`      | Every screen except Sesiones. No review form and no finding edits. |
 
 An astronaut lands on their own profile, and `#/` and `#/crew` redirect there.
 They see only their own data, because the server returns nothing else.
@@ -120,7 +136,7 @@ store. Three implementations exist. `selectBackend` in
   profiles, the alerts with their review trail, the vision and audio runs and
   the evaluation from `crew/mission.json`, and plays one exported session back
   at 1x, 10x or 60x. It has no login and runs as a jury user, so every screen is
-  read only. The Replay screen lists the exported sessions and the link pill
+  read only. The Sesiones screen lists the exported sessions and the link pill
   shows the replay state. See [the published demo](site.md). Implemented in
   [`web/src/data/static.ts`](../web/src/data/static.ts).
 
