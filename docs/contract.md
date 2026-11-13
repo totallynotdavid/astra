@@ -77,7 +77,10 @@ An external model reports one execution as a `ModelRun`: `model_name`,
 `Source` of its input), `modality` (`wearable`, `video` or `audio`),
 `crew_member_id` (null when a run covers several members), `scenario` (the
 name of the simulated scenario that produced the input, null for any other
-input), `started_at`, `completed_at` and its `findings`.
+input), `started_at`, `completed_at`, `input_duration_s` (the length of the
+input in seconds, null when the model does not report it) and its `findings`.
+`completed_at` minus `started_at` is the time the model took, not the length of
+its input.
 
 A `Finding` has `crew_member_id`, `kind` (`activity`, `interaction`, `speech` or
 `vitals`), `label` (a `FindingLabel`: `possible_fall`, `abrupt_movement`,
@@ -97,8 +100,8 @@ unresolved alert for the same member and reason takes the new evidence instead
 of a duplicate.
 
 An `AlertReviewRequest` carries `status`, `comment` and an optional `action`. An
-`AlertReview` adds the `actor`, which is the username of the signed-in reviewer
-(see [accounts](auth.md)). Reviews are appended, never edited or deleted, and
+`AlertReview` adds the `actor`, which is the username of the signed-in reviewer,
+and the `actor_role` of that reviewer (see [accounts](auth.md)). Reviews are appended, never edited or deleted, and
 each one sets the alert's status.
 
 ## Accounts
