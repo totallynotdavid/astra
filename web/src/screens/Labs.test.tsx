@@ -13,6 +13,7 @@ afterEach(cleanup);
 const members: CrewMember[] = [
   { id: "m1", code: "AZ-1", display_name: "Valeria Ramos", crew_role: "commander" },
   { id: "m2", code: "AZ-2", display_name: "Mateo Díaz", crew_role: "doctor" },
+  { id: "m3", code: "AZ-3", display_name: "Sara Ortiz", crew_role: "engineer" },
 ];
 
 function finding(overrides: Partial<Finding> & Pick<Finding, "id" | "label">): Finding {
@@ -38,6 +39,7 @@ function run(overrides: Partial<ModelRun> & Pick<ModelRun, "id" | "modality">): 
     scenario: null,
     started_at: `2026-11-11T10:0${overrides.id}:00Z`,
     completed_at: `2026-11-11T10:0${overrides.id}:30Z`,
+    input_duration_s: null,
     findings: [],
     ...overrides,
   };
@@ -53,6 +55,7 @@ const videoRuns: ModelRun[] = [
   run({
     id: 2,
     modality: "video",
+    input_duration_s: 60,
     findings: [
       finding({
         id: 21,
@@ -148,8 +151,12 @@ describe("Visión", () => {
       "button",
     );
     expect(items.map((item) => item.getAttribute("aria-pressed"))).toEqual(["true", "false"]);
-    expect(items[0]?.textContent).toContain("3 hallazgos");
+    expect(items[0]?.textContent).toContain("Posible caída");
     expect(items[1]?.textContent).toContain("Falló");
+    expect(screen.getByText("Análisis de vídeo")).toBeTruthy();
+    expect(screen.getByText(/Duración 1 min 0 s\./)).toBeTruthy();
+    expect(screen.queryByText(/astra-vision-pose/)).toBeNull();
+    expect(screen.queryByText(/No diagnostica/)).toBeNull();
 
     expect(screen.getAllByRole("region").map((lane) => lane.getAttribute("aria-label"))).toEqual([
       "AZ-1 · Valeria Ramos",
@@ -157,12 +164,15 @@ describe("Visión", () => {
       "Varias personas",
     ]);
     expect(screen.getByText("Caída de la cadera en 1,2 s")).toBeTruthy();
-    expect(screen.getByText("confianza 82%")).toBeTruthy();
+    expect(screen.queryByText(/confianza/)).toBeNull();
     expect(screen.getByText("de 0:30 a 0:42")).toBeTruthy();
     expect(screen.getByLabelText(/Vídeo con el trazado/).getAttribute("src")).toBe(
       "https://media.example/fall.mp4",
     );
-    expect(screen.getByText("La entrada es simulada: no viene de una persona real.")).toBeTruthy();
+    expect(screen.getByText("Sin hallazgos: AZ-3.")).toBeTruthy();
+    expect(screen.queryByText(/Minutos y segundos/)).toBeNull();
+    expect(screen.queryByText(/Tiempo desde el inicio/)).toBeNull();
+    expect(screen.queryByText(/La entrada es simulada/)).toBeNull();
   });
 
   it("states a failed run instead of an empty timeline", () => {
@@ -258,16 +268,16 @@ describe("Audio", () => {
     expect(patch).toHaveBeenCalledWith(31, { crew_member_id: "m2" });
     const lane = screen.getByRole("region", { name: "AZ-2 · Mateo Díaz" });
     expect(within(lane).getByText("Frase «me duele» a las 2:30")).toBeTruthy();
-    expect(within(lane).getByText("confianza 94%")).toBeTruthy();
   });
 
-  it("keeps a silence of the whole group apart and states that participation is not posted", () => {
+  it("keeps a silence of the whole group apart and names who has no findings", () => {
     const { store, source } = setup(audioRuns);
     render(<Live store={store} source={source} screen={Audio} />);
     const group = screen.getByRole("region", { name: "Varias personas" });
     expect(within(group).getByText("Silencio prolongado")).toBeTruthy();
-    expect(screen.getByText(/no incluye el tiempo de habla de cada persona/)).toBeTruthy();
-    expect(screen.getByText(/No diagnostica ni interpreta el estado de ánimo/)).toBeTruthy();
+    expect(screen.getByText("Sin hallazgos: AZ-1, AZ-2 y AZ-3.")).toBeTruthy();
+    expect(screen.queryByText("Participación por persona")).toBeNull();
+    expect(screen.queryByText(/No diagnostica/)).toBeNull();
   });
 });
 
@@ -351,13 +361,13 @@ describe("Evaluación", () => {
     const fall = within(vision).getByRole("row", { name: /Posible caída/ });
     expect(cells(fall)).toEqual(["1", "0", "3", "2", "1", "0", "67%"]);
     const abrupt = within(vision).getByRole("row", { name: /Movimiento brusco/ });
-    expect(cells(abrupt)).toEqual(["Sin escenario", "0", "1", "0", "0", "1", "Sin revisar"]);
+    expect(cells(abrupt)).toEqual(["Sin escenario", "0", "1", "0", "0", "1", "Sin datos"]);
     const isolation = within(vision).getByRole("row", { name: /Aislamiento/ });
-    expect(cells(isolation)).toEqual(["0", "0", "0", "0", "0", "0", "Sin revisar"]);
+    expect(cells(isolation)).toEqual(["0", "0", "0", "0", "0", "0", "Sin datos"]);
 
     const audio = screen.getByRole("table", { name: /Hallazgos de Audio/ });
     const phrase = within(audio).getByRole("row", { name: /Frase de alarma explícita/ });
-    expect(cells(phrase)).toEqual(["0", "0", "1", "0", "0", "1", "Sin revisar"]);
+    expect(cells(phrase)).toEqual(["0", "0", "1", "0", "0", "1", "Sin datos"]);
 
     expect(screen.getByText(/1 ejecución simulada completada/)).toBeTruthy();
     expect(screen.getByText(/2 ejecuciones simuladas completadas/)).toBeTruthy();
@@ -404,12 +414,8 @@ describe("Evaluación", () => {
     expect(cells(fall).slice(0, 2)).toEqual(["2", "1"]);
     const inactive = within(vision).getByRole("row", { name: /Inactividad prolongada/ });
     expect(cells(inactive).slice(0, 2)).toEqual(["1", "1"]);
-    expect(
-      screen.getByText("1 ejecución de escenarios sin hallazgo esperado. Señales falsas: 2."),
-    ).toBeTruthy();
-    expect(
-      screen.getByText("1 ejecución de escenarios sin hallazgo esperado. Señales falsas: 1."),
-    ).toBeTruthy();
+    expect(screen.getByText(/Señales falsas: 2 en 1 ejecución de /)).toBeTruthy();
+    expect(screen.getByText(/Señales falsas: 1 en 1 ejecución de /)).toBeTruthy();
     expect(screen.getByText(/1 ejecución sin escenario conocido no cuenta/)).toBeTruthy();
   });
 

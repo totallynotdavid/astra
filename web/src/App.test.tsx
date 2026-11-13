@@ -97,6 +97,25 @@ describe("routes", () => {
   });
 });
 
+describe("simulated data note", () => {
+  const note = "Todos los datos de este sitio son simulados.";
+
+  it("shows once in the layout of a recorded site, on any screen", () => {
+    const { store, crew } = setup();
+    const source = { replayOnly: true, crew: null } as AstraSource;
+    location.hash = "#/senales";
+    render(
+      <App store={store} crew={crew} source={source} user={userWith("jury")} onLogout={null} />,
+    );
+    expect(screen.getAllByText(note)).toHaveLength(1);
+  });
+
+  it("is absent when the data is live", () => {
+    render_app();
+    expect(screen.queryByText(note)).toBeNull();
+  });
+});
+
 describe("roles", () => {
   it("sends an astronaut to their own profile and shows a short menu", async () => {
     location.hash = "#/";
@@ -104,7 +123,7 @@ describe("roles", () => {
     await act(async () => {});
     expect(location.hash).toBe("#/crew/m1");
     expect(nav()).toEqual(["Mi perfil", "Alertas", "Señales", "Método"]);
-    expect(screen.getByText("Astronauta")).toBeTruthy();
+    expect(screen.queryByText("Astronauta")).toBeNull();
   });
 
   it.each([
@@ -169,6 +188,6 @@ describe("roles", () => {
     screen.getByRole("button", { name: "Cerrar sesión" }).click();
     expect(ended).toBe(1);
     expect(screen.getByText("doctor")).toBeTruthy();
-    expect(screen.getByText("Médico")).toBeTruthy();
+    expect(screen.queryByText("Médico")).toBeNull();
   });
 });

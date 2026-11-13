@@ -175,7 +175,12 @@ describe("crew profile", () => {
     expect(store.getSnapshot().assessments["m1|all"]?.readings.map((r) => r.id)).toEqual([1]);
     expect(screen.getByText("70.0 lpm")).toBeTruthy();
     expect(screen.getByText("Silencio de 12 s en el canal")).toBeTruthy();
-    expect(screen.getByText("confianza 82%")).toBeTruthy();
+    const patterns = screen.getByText("Patrones señalados").parentElement!;
+    expect(within(patterns).getByText("Patrón de posible caída")).toBeTruthy();
+    expect(within(patterns).getByText("Audio")).toBeTruthy();
+    expect(screen.getByText("Pulsera · Movimiento brusco")).toBeTruthy();
+    expect(screen.queryByText(/confianza/)).toBeNull();
+    expect(screen.queryByText(/voz-1/)).toBeNull();
     expect(screen.getByText("Simulado")).toBeTruthy();
     expect(screen.queryByText("En vivo")).toBeNull();
     expect(screen.getByText("Revisar").getAttribute("href")).toBe("#/alertas?member=m1");
@@ -188,6 +193,7 @@ describe("crew profile", () => {
       "https://example.org/perfil",
     );
     expect(within(profile).queryByText("lpm")).toBeNull();
+    expect(within(profile).queryByText("Biografía oficial.")).toBeNull();
   });
 
   it("asks for a window when the period changes", async () => {
@@ -220,6 +226,7 @@ describe("crew profile", () => {
       scenario: null,
       started_at: "2026-11-11T10:00:00Z",
       completed_at: null,
+      input_duration_s: null,
       findings: [],
     };
     act(() => store.apply({ type: "model_run", model_run: run }));
@@ -245,6 +252,7 @@ describe("crew profile", () => {
       scenario: null,
       started_at: "2026-11-11T10:00:00Z",
       completed_at: null,
+      input_duration_s: null,
       findings: [],
     };
     act(() => store.apply({ type: "model_run", model_run: run }));

@@ -102,6 +102,15 @@ describe("signals system status", () => {
     expect(screen.getByText("Modelo no disponible")).toBeTruthy();
   });
 
+  it("shows only the empty state when no replay has played", () => {
+    render(<Senales state={dash({ health })} replay="idle" replayOnly />);
+    expect(screen.getByText("Todavía no hay lecturas")).toBeTruthy();
+    expect(screen.queryByText("Estado del sistema")).toBeNull();
+    expect(screen.queryByText("Alertas abiertas")).toBeNull();
+    expect(screen.queryByText("Eventos")).toBeNull();
+    expect(screen.queryByText("Sin repetición")).toBeNull();
+  });
+
   it("shows the device rows for the latest reading", () => {
     view(dash({ readings: [reading] }));
     expect(screen.getByText("astra-01")).toBeTruthy();

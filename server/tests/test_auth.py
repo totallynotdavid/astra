@@ -310,9 +310,9 @@ def test_a_review_takes_its_actor_from_the_session(world: World) -> None:
     assert resolved.json()["actor"] == "admin"
 
     trail = world.as_("jury").get(path).json()
-    assert [(r["actor"], r["status"]) for r in trail] == [
-        ("doctor", "acknowledged"),
-        ("admin", "resolved"),
+    assert [(r["actor"], r["actor_role"], r["status"]) for r in trail] == [
+        ("doctor", "doctor", "acknowledged"),
+        ("admin", "admin", "resolved"),
     ]
 
 
