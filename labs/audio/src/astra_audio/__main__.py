@@ -83,7 +83,7 @@ def _run(args: argparse.Namespace) -> dict[str, Any]:
     version = f"{__version__}+{conversation.diarization}"
     if args.server is None:
         result["run"] = _new_run(
-            findings, source, version, args.simulate, started_at
+            conversation, findings, source, version, args.simulate, started_at
         ).model_dump(mode="json")
         return result
     server = Server(
@@ -102,12 +102,13 @@ def _run(args: argparse.Namespace) -> dict[str, Any]:
         for finding in findings
     ]
     result["model_run"] = server.post_run(
-        _new_run(resolved, source, version, args.simulate, started_at)
+        _new_run(conversation, resolved, source, version, args.simulate, started_at)
     )
     return result
 
 
 def _new_run(
+    conversation: Conversation,
     findings: list[NewFinding],
     source: Source,
     version: str,
@@ -122,6 +123,8 @@ def _new_run(
         modality=Modality.audio,
         crew_member_id=None,
         scenario=scenario,
+        input_duration_s=max((s.end_s for s in conversation.segments), default=0)
+        or None,
         findings=findings,
         started_at=started_at,
         completed_at=datetime.now(UTC),

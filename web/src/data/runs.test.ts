@@ -8,6 +8,7 @@ type FindingLabel = components["schemas"]["FindingLabel"];
 
 const members: CrewMember[] = [
   { id: "m1", code: "AZ-1", display_name: "Valeria Ramos", crew_role: "commander" },
+  { id: "m2", code: "AZ-2", display_name: "Mateo Díaz", crew_role: "doctor" },
 ];
 
 function runWith(findings: Array<Pick<Finding, "start_s" | "end_s">>): ModelRun {
@@ -22,6 +23,7 @@ function runWith(findings: Array<Pick<Finding, "start_s" | "end_s">>): ModelRun 
     scenario: null,
     started_at: "2026-11-11T10:00:00Z",
     completed_at: null,
+    input_duration_s: null,
     findings: findings.map((span, index) => ({
       id: index + 1,
       crew_member_id: "m1",
@@ -43,6 +45,19 @@ describe("timeline", () => {
   ])("puts ticks on round times for %s", (_name, end, ticks) => {
     const spans = end === 1 ? [] : [{ start_s: 0, end_s: end }];
     expect(timeline(runWith(spans), members).ticks).toEqual(ticks);
+  });
+
+  it("spans the input length, not the last finding", () => {
+    const run = { ...runWith([{ start_s: 0, end_s: 30 }]), input_duration_s: 120 };
+    const { duration, lanes } = timeline(run, members);
+    expect(duration).toBe(120);
+    expect(lanes[0]?.rows[0]?.bars[0]?.width).toBe(25);
+  });
+
+  it("draws a lane only for people with findings and lists the others apart", () => {
+    const { lanes, quiet } = timeline(runWith([{ start_s: 0, end_s: 5 }]), members);
+    expect(lanes.map((lane) => lane.member?.code)).toEqual(["AZ-1"]);
+    expect(quiet.map((member) => member.code)).toEqual(["AZ-2"]);
   });
 
   it("places a bar by its span and keeps a one second finding visible", () => {

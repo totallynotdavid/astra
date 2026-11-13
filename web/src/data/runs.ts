@@ -34,6 +34,7 @@ export interface Timeline {
   duration: number;
   ticks: number[];
   lanes: Lane[];
+  quiet: CrewMember[];
 }
 
 const MIN_WIDTH = 0.6;
@@ -51,7 +52,11 @@ function laneKey(finding: Finding, known: Set<string>): string {
 
 export function timeline(run: ModelRun, members: CrewMember[]): Timeline {
   const known = new Set(members.map((member) => member.id));
-  const duration = Math.max(1, ...run.findings.map((finding) => finding.end_s));
+  const duration = Math.max(
+    1,
+    run.input_duration_s ?? 0,
+    ...run.findings.map((finding) => finding.end_s),
+  );
   const byLane = new Map<string, Map<FindingLabel, Bar[]>>();
   for (const finding of run.findings) {
     const key = laneKey(finding, known);
@@ -70,12 +75,15 @@ export function timeline(run: ModelRun, members: CrewMember[]): Timeline {
     member,
     rows: [...(byLane.get(key) ?? [])].map(([label, bars]) => ({ label, bars })),
   });
-  const lanes = members.map((member) => build(member.id, member));
+  const lanes = members
+    .filter((member) => byLane.has(member.id))
+    .map((member) => build(member.id, member));
   for (const key of [GROUP_LANE, UNASSIGNED_LANE]) {
     if (byLane.has(key)) lanes.push(build(key, null));
   }
   return {
     duration,
+    quiet: members.filter((member) => !byLane.has(member.id)),
     ticks: Array.from(
       { length: Math.floor(duration / tickStep(duration)) + 1 },
       (_, index) => index * tickStep(duration),

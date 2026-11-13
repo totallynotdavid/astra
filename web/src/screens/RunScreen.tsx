@@ -10,7 +10,7 @@ import type { CrewState, CrewStore } from "../data/crew";
 import { runsOf, timeline } from "../data/runs";
 import type { AstraSource, ModelRun } from "../data/source";
 import { findingLabelText, runStatusText } from "../lib/copy";
-import { formatDateTime, formatDuration } from "../lib/format";
+import { formatDateTime, formatSeconds } from "../lib/format";
 import type { LabModality } from "../lib/scenarios";
 
 const statusVariant = {
@@ -28,7 +28,13 @@ export interface RunScreenCopy {
   title: string;
   empty: string;
   unavailable: string;
-  notice: string;
+  runTitle: string;
+}
+
+function runLabel(run: ModelRun): string {
+  if (run.status !== "completed") return runStatusText[run.status];
+  const first = run.findings[0];
+  return first ? findingLabelText[first.label] : "Sin hallazgos";
 }
 
 const modelOf = (run: ModelRun) => `${run.model_name} ${run.model_version}`;
@@ -56,18 +62,14 @@ function RunItem({
           selected ? "bg-raised" : "hover:bg-raised/60"
         }`}
       >
-        <span className="text-sm text-text tabular-nums">{formatDateTime(run.started_at)}</span>
+        <span className="text-sm text-text">{runLabel(run)}</span>
+        <span className="text-xs text-muted tabular-nums">{formatDateTime(run.started_at)}</span>
         {showModel && <span className="text-xs text-muted">{modelOf(run)}</span>}
-        <span className="flex flex-wrap items-center gap-2">
-          {showSource && <SourceBadge source={run.source} />}
-          {run.status === "completed" ? (
-            <span className="text-xs text-muted tabular-nums">
-              {run.findings.length === 1 ? "1 hallazgo" : `${run.findings.length} hallazgos`}
-            </span>
-          ) : (
-            <Badge variant={statusVariant[run.status]}>{runStatusText[run.status]}</Badge>
-          )}
-        </span>
+        {showSource && (
+          <span>
+            <SourceBadge source={run.source} />
+          </span>
+        )}
       </button>
     </li>
   );
@@ -88,7 +90,7 @@ export function RunScreen({
   store: CrewStore;
   source: AstraSource;
   reviewer: string | null;
-  extra: (run: ModelRun) => ReactNode;
+  extra?: (run: ModelRun) => ReactNode;
 }) {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const api = source.crew;
@@ -129,67 +131,54 @@ export function RunScreen({
       <div className="min-w-0 space-y-4">
         <Card className="p-4">
           <div className="flex flex-wrap items-center gap-2">
-            <CardTitle>{modelOf(run)}</CardTitle>
+            <CardTitle>{copy.runTitle}</CardTitle>
             {run.source !== "SYNTHETIC" && <SourceBadge source={run.source} />}
             {run.status !== "completed" && (
               <Badge variant={statusVariant[run.status]}>{runStatusText[run.status]}</Badge>
             )}
           </div>
           <p className="mt-1 text-sm text-muted">
-            Inicio {formatDateTime(run.started_at)}. Duración{" "}
-            {formatDuration(run.started_at, run.completed_at)}.
+            Inicio {formatDateTime(run.started_at)}.
+            {run.input_duration_s != null && ` Duración ${formatSeconds(run.input_duration_s)}.`}
           </p>
-          <p className="mt-1 text-sm text-muted">{copy.notice}</p>
-          {run.source === "SYNTHETIC" && (
-            <p className="mt-1 text-sm text-muted">
-              La entrada es simulada: no viene de una persona real.
-            </p>
-          )}
           {run.status !== "completed" && (
             <output className="mt-2 block text-sm text-review">{stateText[run.status]}</output>
           )}
         </Card>
-        {extra(run)}
+        {extra?.(run)}
         {run.findings.length > 0 && (
           <>
             <Card className="p-4">
-              <CardTitle>Línea de tiempo</CardTitle>
-              <p className="mt-1 mb-3 text-xs text-muted">
-                Tiempo desde el inicio de la entrada. El detalle de cada hallazgo está debajo.
-              </p>
+              <CardTitle className="mb-3">Línea de tiempo</CardTitle>
               <RunTimeline timeline={lanes} />
             </Card>
             <Card className="p-4">
               <CardTitle>Hallazgos</CardTitle>
-              {lanes.lanes
-                .filter((lane) => lane.rows.length > 0)
-                .map((lane) => (
-                  <section key={lane.key} className="mt-3" aria-label={laneTitle(lane)}>
-                    <h3 className="text-sm font-medium">{laneTitle(lane)}</h3>
-                    <ul>
-                      {lane.rows
-                        .flatMap((row) => row.bars)
-                        .sort((a, b) => a.finding.start_s - b.finding.start_s)
-                        .map(({ finding }) => (
-                          <FindingRow
-                            key={finding.id}
-                            refData={{
-                              finding,
-                              modality: run.modality,
-                              model_name: run.model_name,
-                            }}
-                            members={crew.members}
-                            title={findingLabelText[finding.label]}
-                            onPatch={
-                              reviewer
-                                ? (patch) => store.patchFinding(api, finding.id, patch)
-                                : null
-                            }
-                          />
-                        ))}
-                    </ul>
-                  </section>
-                ))}
+              {lanes.lanes.map((lane) => (
+                <section key={lane.key} className="mt-3" aria-label={laneTitle(lane)}>
+                  <h3 className="text-sm font-medium">{laneTitle(lane)}</h3>
+                  <ul>
+                    {lane.rows
+                      .flatMap((row) => row.bars)
+                      .sort((a, b) => a.finding.start_s - b.finding.start_s)
+                      .map(({ finding }) => (
+                        <FindingRow
+                          key={finding.id}
+                          refData={{
+                            finding,
+                            modality: run.modality,
+                            model_name: run.model_name,
+                          }}
+                          members={crew.members}
+                          title={findingLabelText[finding.label]}
+                          onPatch={
+                            reviewer ? (patch) => store.patchFinding(api, finding.id, patch) : null
+                          }
+                        />
+                      ))}
+                  </ul>
+                </section>
+              ))}
             </Card>
           </>
         )}

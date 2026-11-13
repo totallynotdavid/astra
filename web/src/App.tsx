@@ -6,7 +6,7 @@ import type { CrewStore } from "./data/crew";
 import { useCrew } from "./data/crew";
 import type { AstraSource, User } from "./data/source";
 import { useDashboard, type DashboardStore } from "./data/store";
-import { canReplay, canSeeLabs, ownProfile, reviewerName } from "./lib/access";
+import { canReplay, canSeeLabs, ownProfile, reviewerLabel } from "./lib/access";
 import { primaryDeviceId, replayPhase } from "./lib/status";
 import { Alerts } from "./screens/Alerts";
 import { Crew } from "./screens/Crew";
@@ -106,7 +106,7 @@ export function App({
         store={crew}
         source={source}
         memberFilter={params.get("member")}
-        reviewer={reviewerName(user)}
+        reviewer={reviewerLabel(user)}
       />
     );
   } else if (labsMatch && canSeeLabs(user)) {
@@ -116,7 +116,7 @@ export function App({
         crew={crewState}
         store={crew}
         source={source}
-        reviewer={reviewerName(user)}
+        reviewer={reviewerLabel(user)}
       />
     );
   } else if (path === "#/sesiones" && canReplay(user, source.replayOnly)) {
@@ -159,6 +159,11 @@ export function App({
           {screen}
         </div>
       </main>
+      {source.replayOnly && (
+        <footer className="mx-auto max-w-6xl px-4 pb-8 sm:px-6">
+          <p className="text-xs text-muted">Todos los datos de este sitio son simulados.</p>
+        </footer>
+      )}
     </div>
   );
 }

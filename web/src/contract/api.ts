@@ -401,6 +401,7 @@ export interface components {
       action: string | null;
       /** Actor */
       actor: string;
+      actor_role: components["schemas"]["UserRole"];
       /** Alert Id */
       alert_id: number;
       /** Comment */
@@ -809,6 +810,8 @@ export interface components {
       findings: components["schemas"]["Finding"][];
       /** Id */
       id: number;
+      /** Input Duration S */
+      input_duration_s: number | null;
       modality: components["schemas"]["Modality"];
       /** Model Name */
       model_name: string;
@@ -874,6 +877,8 @@ export interface components {
        * @default []
        */
       findings: components["schemas"]["NewFinding"][];
+      /** Input Duration S */
+      input_duration_s?: number | null;
       modality: components["schemas"]["Modality"];
       /** Model Name */
       model_name: string;

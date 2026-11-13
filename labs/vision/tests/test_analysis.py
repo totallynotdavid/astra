@@ -32,7 +32,43 @@ def test_track_mapping_is_carried_to_person_findings() -> None:
     )
 
     assert possible_fall.crew_member_id == "AZ-1"
-    assert possible_fall.evidence.description.startswith("El track 0")
+    assert possible_fall.evidence.description.startswith("AZ-1 bajó de golpe")
+
+
+def test_unmapped_person_is_named_without_an_internal_id() -> None:
+    findings = analyze(simulate("fall", seed=3))
+
+    possible_fall = next(
+        finding for finding in findings if finding.label is FindingLabel.possible_fall
+    )
+
+    assert possible_fall.crew_member_id is None
+    assert possible_fall.evidence.description.startswith("Una persona sin asignar")
+
+
+@pytest.mark.parametrize(
+    ("crew", "who"),
+    (
+        ({0: "AZ-1", 1: "AZ-2"}, "AZ-1 y AZ-2 estuvieron muy cerca"),
+        ({1: "AZ-2"}, "AZ-2 y una persona sin asignar estuvieron muy cerca"),
+        ({}, "Dos personas sin asignar estuvieron muy cerca"),
+    ),
+    ids=("both mapped", "one mapped", "none mapped"),
+)
+def test_interaction_names_both_people(crew: dict[int, str], who: str) -> None:
+    track = _two_person_track(
+        lambda timestamp_s, track_id: (0.40 + 0.01 * track_id, 0.50)
+    )
+
+    findings = analyze(track, crew)
+
+    assert findings[0].evidence.description.startswith(who)
+
+
+@pytest.mark.parametrize("scenario", ("fall", "isolation", "inactive"))
+def test_no_finding_text_names_a_track(scenario: str) -> None:
+    for finding in analyze(simulate(scenario, seed=11)):
+        assert "track" not in finding.evidence.description.lower()
 
 
 def test_fall_survives_a_single_missing_frame() -> None:

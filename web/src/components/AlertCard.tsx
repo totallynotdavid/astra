@@ -11,6 +11,7 @@ import {
   crewRoleText,
   findingLabelText,
 } from "../lib/copy";
+import { userRoleText } from "../lib/access";
 import { formatDateTime } from "../lib/format";
 import { FindingRow } from "./FindingRow";
 import { Badge } from "./ui/badge";
@@ -124,7 +125,7 @@ export function AlertCard({
             <h3 className="text-sm font-medium">Registrar revisión</h3>
           </summary>
           <form onSubmit={(e) => void submit(e)} className="mt-2">
-            <p className="text-xs text-muted">Se registra a nombre de {reviewer}.</p>
+            <p className="text-xs text-muted">Se registra como {reviewer}.</p>
             <div className="mt-2">
               <label htmlFor={`status-${alert.id}`} className="mb-1 block text-sm text-muted">
                 Nuevo estado
@@ -184,7 +185,7 @@ export function AlertCard({
                   <Badge variant={statusVariant[review.status]}>
                     {alertStatusText[review.status]}
                   </Badge>
-                  <span className="text-text">{review.actor}</span>
+                  <span className="text-text">{userRoleText[review.actor_role]}</span>
                   <span className="text-xs text-muted tabular-nums">
                     {formatDateTime(review.created_at)}
                   </span>

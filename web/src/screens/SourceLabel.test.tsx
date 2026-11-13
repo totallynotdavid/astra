@@ -98,9 +98,9 @@ const count = (source: Source) => screen.queryAllByText(badgeText[source]).lengt
 
 describe("source label rule", () => {
   describe("crew overview", () => {
-    it("labels a recorded single-source screen once with the simulated note", () => {
+    it("leaves a recorded single-source screen to the layout note", () => {
       render(<Crew state={dash()} crew={crewOf(["SYNTHETIC", "SYNTHETIC"])} recorded />);
-      expect(screen.queryAllByText(note)).toHaveLength(1);
+      expect(screen.queryAllByText(note)).toHaveLength(0);
       expect(count("SYNTHETIC")).toBe(0);
     });
 
@@ -122,9 +122,9 @@ describe("source label rule", () => {
     const view = (readings: Reading[], replayOnly: boolean) =>
       render(<Senales state={dash({ readings })} replay={null} replayOnly={replayOnly} />);
 
-    it("labels a recorded single-source screen once with the simulated note", () => {
+    it("leaves a recorded single-source screen to the layout note", () => {
       view([reading(1, "SYNTHETIC"), reading(2, "SYNTHETIC")], true);
-      expect(screen.queryAllByText(note)).toHaveLength(1);
+      expect(screen.queryAllByText(note)).toHaveLength(0);
       expect(count("SYNTHETIC")).toBe(0);
     });
 
@@ -152,9 +152,9 @@ describe("source label rule", () => {
         />,
       );
 
-    it("labels a recorded single-source list once", () => {
+    it("leaves a recorded single-source list to the layout note", () => {
       view([session("a", "SYNTHETIC"), session("b", "SYNTHETIC")], true);
-      expect(screen.queryAllByText(note)).toHaveLength(1);
+      expect(screen.queryAllByText(note)).toHaveLength(0);
       expect(count("SYNTHETIC")).toBe(0);
     });
 

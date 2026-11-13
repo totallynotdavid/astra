@@ -68,7 +68,7 @@ describe("sign in", () => {
 
     await screen.findByRole("button", { name: "Cerrar sesión" });
     expect(login).toHaveBeenCalledWith("doctor", "secreto-1234");
-    expect(screen.getByText("Médico")).toBeTruthy();
+    expect(screen.getByText("doctor")).toBeTruthy();
   });
 
   it("keeps the user name and clears the password after a refusal", async () => {
@@ -140,7 +140,7 @@ describe("no accounts", () => {
     const jury: User = { ...doctor, username: "jurado", role: "jury" };
     const backend: Backend = { auth: null, user: jury, createSource: () => emptySource() };
     render(<Root backend={backend} />);
-    await screen.findByText("Jurado");
+    await screen.findByRole("navigation", { name: "Pantallas" });
     expect(screen.queryByRole("button", { name: "Cerrar sesión" })).toBeNull();
     expect(screen.queryByLabelText("Contraseña")).toBeNull();
   });

@@ -80,21 +80,19 @@ describe("the published demo, read from static files with no server", () => {
     await open("#/laboratorios/vision");
     await page.getByRole("heading", { name: "Línea de tiempo" }).waitFor();
     await see(page.getByText("Inactividad prolongada").first());
-    await see(page.getByText("La entrada es simulada").first());
+    await see(page.getByText("Sin hallazgos: AZ-1, AZ-3 y AZ-4."));
+    await count(page.getByText("Todos los datos de este sitio son simulados."), 1);
 
     await open("#/laboratorios/audio");
     await page.getByRole("heading", { name: "Línea de tiempo" }).waitFor();
     await see(page.getByText("Interrupciones frecuentes"));
-    await page
-      .getByRole("button", { name: /1 hallazgo/ })
-      .first()
-      .click();
-    await see(page.getByText("Frase de alarma explícita"));
+    await page.getByRole("button", { name: /Frase de alarma explícita/ }).click();
+    await see(page.getByText(/AZ-4 dijo «me duele»/));
 
     await open("#/laboratorios/evaluacion");
     await page.getByRole("heading", { name: "Cómo se calcula" }).waitFor();
     await count(page.getByRole("table"), 2);
-    await count(page.getByText("Señales falsas: 0."), 2);
+    await count(page.getByText(/Señales falsas: 0 en 1 ejecución de /), 2);
 
     expect(backendRequests).toEqual([]);
   });

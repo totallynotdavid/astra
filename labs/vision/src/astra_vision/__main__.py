@@ -15,7 +15,7 @@ from astra_vision.server_contract import (
     Source,
 )
 from astra_vision.simulator import SCENARIOS, simulate
-from astra_vision.track import load_track
+from astra_vision.track import PoseTrack, load_track
 
 
 def main() -> None:
@@ -75,7 +75,7 @@ def _run(args: argparse.Namespace) -> dict[str, Any]:
             "frames": len(track.frames),
             "findings": [finding.model_dump(mode="json") for finding in findings],
             "run": _new_run(
-                findings, source, args.simulate, datetime.now(UTC)
+                track, findings, source, args.simulate, datetime.now(UTC)
             ).model_dump(mode="json"),
         }
     server = Server(
@@ -94,11 +94,12 @@ def _run(args: argparse.Namespace) -> dict[str, Any]:
         for finding in findings
     ]
     return server.post_run(
-        _new_run(server_findings, source, args.simulate, datetime.now(UTC))
+        _new_run(track, server_findings, source, args.simulate, datetime.now(UTC))
     )
 
 
 def _new_run(
+    track: PoseTrack,
     findings: list[NewFinding],
     source: Source,
     scenario: str | None,
@@ -112,6 +113,8 @@ def _new_run(
         modality=Modality.video,
         crew_member_id=None,
         scenario=scenario,
+        input_duration_s=(track.frames[-1].timestamp_s - track.frames[0].timestamp_s)
+        or None,
         findings=findings,
         started_at=started_at,
         completed_at=datetime.now(UTC),

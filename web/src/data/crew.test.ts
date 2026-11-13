@@ -117,6 +117,7 @@ describe("CrewStore", () => {
       scenario: null,
       started_at: "2026-11-11T10:00:00Z",
       completed_at: null,
+      input_duration_s: null,
       findings: [finding],
     };
     store.apply({ type: "model_run", model_run: run });
@@ -138,6 +139,7 @@ describe("CrewStore", () => {
       scenario: null,
       started_at: startedAt,
       completed_at: null,
+      input_duration_s: null,
       findings,
     });
     store.syncCrew({
@@ -170,6 +172,7 @@ describe("CrewStore", () => {
       scenario: null,
       started_at: "2026-11-11T10:00:00Z",
       completed_at: null,
+      input_duration_s: null,
       findings,
     });
     store.syncCrew({ members: [member], runs: [run([finding, { ...finding, id: 4 }])] });
@@ -193,6 +196,7 @@ describe("CrewStore", () => {
           scenario: null,
           started_at: "2026-11-11T10:00:00Z",
           completed_at: null,
+          input_duration_s: null,
           findings: [{ ...finding, crew_member_id: null }],
         },
       ],
@@ -215,6 +219,7 @@ describe("CrewStore", () => {
       comment: "Revisado en cabina",
       action: "Se avisó a tierra",
       actor: "Diego",
+      actor_role: "doctor" as const,
       created_at: "2026-11-11T10:05:00Z",
     };
     const crewApi = api({ postReview: vi.fn(async () => review) });

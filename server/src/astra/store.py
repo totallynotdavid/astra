@@ -148,6 +148,7 @@ CREATE TABLE IF NOT EXISTS model_runs (
     modality TEXT NOT NULL,
     crew_member_id TEXT,
     scenario TEXT,
+    input_duration_s REAL,
     started_at TEXT NOT NULL,
     completed_at TEXT
 );
@@ -185,7 +186,8 @@ CREATE TABLE IF NOT EXISTS alert_reviews (
     status TEXT NOT NULL,
     comment TEXT NOT NULL,
     action TEXT,
-    actor TEXT NOT NULL
+    actor TEXT NOT NULL,
+    actor_role TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS crew_photos (
     crew_member_id TEXT PRIMARY KEY,
@@ -221,7 +223,15 @@ CREATE TABLE IF NOT EXISTS auth_sessions (
 CREATE INDEX IF NOT EXISTS auth_sessions_user ON auth_sessions (user_id);
 """
 
-_DB_SCHEMA_VERSION = "5"
+_DB_SCHEMA_VERSION = "6"
+
+_ADDED_COLUMNS = (
+    ("readings", "crew_member_id", "TEXT"),
+    ("insights", "crew_member_id", "TEXT"),
+    ("events", "crew_member_id", "TEXT"),
+    ("model_runs", "input_duration_s", "REAL"),
+    ("alert_reviews", "actor_role", "TEXT NOT NULL DEFAULT 'doctor'"),
+)
 
 _MEASUREMENT_COLUMNS = (
     "heart_rate_bpm",
@@ -264,20 +274,29 @@ class Store:
         self._db = sqlite3.connect(path, check_same_thread=False)
         self._db.row_factory = sqlite3.Row
         with self._db:
-            for table in ("readings", "insights", "events"):
-                columns = {
-                    row["name"]
-                    for row in self._db.execute(f"PRAGMA table_info({table})")
-                }
-                if columns and "crew_member_id" not in columns:
-                    self._db.execute(
-                        f"ALTER TABLE {table} ADD COLUMN crew_member_id TEXT"
-                    )
+            self._add_missing_columns()
             self._db.executescript(_SCHEMA)
             self._db.execute(
                 "INSERT OR REPLACE INTO meta (key, value) VALUES ('schema_version', ?)",
                 (_DB_SCHEMA_VERSION,),
             )
+
+    def _add_missing_columns(self) -> None:
+        for table, column, declaration in _ADDED_COLUMNS:
+            columns = {
+                row["name"] for row in self._db.execute(f"PRAGMA table_info({table})")
+            }
+            if columns and column not in columns:
+                self._db.execute(
+                    f"ALTER TABLE {table} ADD COLUMN {column} {declaration}"
+                )
+                if (table, column) == ("alert_reviews", "actor_role"):
+                    # Reviews written before the column existed take the
+                    # reviewer's current role; only doctors could review then.
+                    self._db.execute(
+                        "UPDATE alert_reviews SET actor_role = COALESCE("
+                        "(SELECT role FROM users WHERE username = actor), 'doctor')"
+                    )
 
     def close(self) -> None:
         with self._lock:
@@ -867,8 +886,8 @@ class Store:
         with self._lock, self._db:
             cursor = self._db.execute(
                 "INSERT INTO model_runs (model_name, model_version, status,"
-                " source, modality, crew_member_id, scenario, started_at,"
-                " completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                " source, modality, crew_member_id, scenario, input_duration_s,"
+                " started_at, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     run.model_name,
                     run.model_version,
@@ -877,6 +896,7 @@ class Store:
                     run.modality.value,
                     run.crew_member_id,
                     run.scenario,
+                    run.input_duration_s,
                     _stamp(run.started_at),
                     _stamp(run.completed_at) if run.completed_at else None,
                 ),
@@ -894,6 +914,7 @@ class Store:
             modality=run.modality,
             crew_member_id=run.crew_member_id,
             scenario=run.scenario,
+            input_duration_s=run.input_duration_s,
             started_at=run.started_at.astimezone(UTC),
             completed_at=(
                 run.completed_at.astimezone(UTC) if run.completed_at else None
@@ -1014,6 +1035,7 @@ class Store:
                 modality=Modality(row["modality"]),
                 crew_member_id=row["crew_member_id"],
                 scenario=row["scenario"],
+                input_duration_s=row["input_duration_s"],
                 started_at=_parse(row["started_at"]),
                 completed_at=(
                     _parse(row["completed_at"]) if row["completed_at"] else None
@@ -1163,6 +1185,7 @@ class Store:
         comment: str,
         action: str | None,
         actor: str,
+        actor_role: UserRole,
         created_at: datetime,
     ) -> AlertReview | None:
         with self._lock, self._db:
@@ -1175,7 +1198,8 @@ class Store:
                 return None
             cursor = self._db.execute(
                 "INSERT INTO alert_reviews (alert_id, created_at, status,"
-                " comment, action, actor) VALUES (?, ?, ?, ?, ?, ?)",
+                " comment, action, actor, actor_role)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?)",
                 (
                     alert_id,
                     _stamp(created_at),
@@ -1183,6 +1207,7 @@ class Store:
                     comment,
                     action,
                     actor,
+                    actor_role.value,
                 ),
             )
             self._db.execute(
@@ -1197,6 +1222,7 @@ class Store:
             comment=comment,
             action=action,
             actor=actor,
+            actor_role=actor_role,
         )
 
     def alert_reviews(self, alert_id: int) -> list[AlertReview] | None:
@@ -1221,6 +1247,7 @@ class Store:
                 comment=row["comment"],
                 action=row["action"],
                 actor=row["actor"],
+                actor_role=UserRole(row["actor_role"]),
             )
             for row in rows
         ]

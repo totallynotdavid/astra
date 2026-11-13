@@ -300,6 +300,7 @@ def api_routers(
             request.comment,
             request.action,
             user.username,
+            user.role,
             datetime.now(UTC),
         )
         if review is None:
@@ -390,7 +391,7 @@ def create_app(
 ) -> FastAPI:
     store = Store(db_path or os.environ.get("ASTRA_DB", "astra.sqlite3"))
     now = clock or (lambda: datetime.now(UTC))
-    seed(store, datetime.now(UTC))
+    seed(store, now())
     if os.environ.get("ASTRA_DEMO") == "1":
         seed_demo_users(store, now())
     auth = Auth(store, now, os.environ.get("ASTRA_LAB_TOKEN"))

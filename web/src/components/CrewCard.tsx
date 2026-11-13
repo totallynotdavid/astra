@@ -47,7 +47,7 @@ export function CrewCard({
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <h2 className="truncate text-lg font-medium tracking-tight">{member.display_name}</h2>
+          <h2 className="truncate text-lg font-medium tracking-heading">{member.display_name}</h2>
           <p className="text-sm text-muted">
             <span>{member.code}</span>
             <span className="mx-1.5 text-faint" aria-hidden="true">
@@ -67,7 +67,7 @@ export function CrewCard({
       </div>
       <div className="mt-4 flex items-end justify-between gap-4">
         <div>
-          <p className="text-3xl font-semibold tracking-tight tabular-nums">
+          <p className="text-3xl font-semibold tracking-heading tabular-nums">
             {formatValue(hr)}
             {hr !== null && <span className="ml-1 text-sm font-normal text-muted">lpm</span>}
           </p>

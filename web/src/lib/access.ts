@@ -7,8 +7,8 @@ export const userRoleText: Record<UserRole, string> = {
   jury: "Jurado",
 };
 
-export function reviewerName(user: User): string | null {
-  return user.role === "admin" || user.role === "doctor" ? user.username : null;
+export function reviewerLabel(user: User): string | null {
+  return user.role === "admin" || user.role === "doctor" ? userRoleText[user.role] : null;
 }
 
 export function canReplay(user: User, replayOnly: boolean): boolean {

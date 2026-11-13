@@ -26,7 +26,6 @@ import {
 import { formatDateTime, formatValue } from "../lib/format";
 import { useNow } from "../lib/useNow";
 import { PageHead } from "../components/PageHead";
-import { SimulatedNote } from "../components/SimulatedNote";
 import { Segmented, SegmentedButton } from "../components/ui/segmented";
 
 type AssessmentFinding = components["schemas"]["AssessmentFinding"];
@@ -53,14 +52,12 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-// A finding signal comes from a model run; its origin is the run's modality and
-// model. An insight signal comes from the wearable, so its origin is the
-// variables and their quality.
 function signalOrigin(signal: AssessmentSignal, finding: AssessmentFinding | undefined): string {
-  if (finding) return `${modalityText[finding.modality]} · ${finding.model_name}`;
   return [
-    signal.variables.map((v) => measurementText[v as never] ?? v).join(", "),
-    signal.quality.ppg_contact && ppgContactText[signal.quality.ppg_contact],
+    modalityText[finding?.modality ?? "wearable"],
+    signal.quality.ppg_contact &&
+      signal.quality.ppg_contact !== "ok" &&
+      ppgContactText[signal.quality.ppg_contact],
     signal.quality.missing.length > 0 &&
       `Sin dato: ${signal.quality.missing.map((m) => measurementText[m]).join(", ")}`,
     signal.quality.motion_artifact && "Movimiento brusco",
@@ -84,11 +81,6 @@ function SignalRow({
         <span className="text-sm font-medium text-text">
           {signal.labels.map(alertReasonText).join(", ")}
         </span>
-        {signal.confidence != null && (
-          <span className="text-xs text-muted tabular-nums">
-            confianza {Math.round(signal.confidence * 100)}%
-          </span>
-        )}
         {showSource && signal.quality.source && <SourceBadge source={signal.quality.source} />}
         {signal.review_status && signal.review_status !== "pending" && (
           <Badge variant={reviewVariant[signal.review_status]}>
@@ -123,7 +115,6 @@ function PublicProfile({ member }: { member: CrewMemberT }) {
         <div className="min-w-0 text-sm">
           <p className="text-text">{profile.name}</p>
           {profile.agency && <p className="text-muted">{profile.agency}</p>}
-          {profile.bio && <p className="mt-1 text-muted">{profile.bio}</p>}
           {profile.source_url && (
             <a
               href={profile.source_url}
@@ -209,12 +200,7 @@ export function CrewMemberScreen({
         note={`${member.code} · ${crewRoleText[member.crew_role]}`}
         aside={
           <>
-            {uniform &&
-              (source.replayOnly && uniform !== "LIVE" ? (
-                <SimulatedNote />
-              ) : (
-                <SourceBadge source={uniform} />
-              ))}
+            {uniform && !source.replayOnly && <SourceBadge source={uniform} />}
             {device ? (
               <LinkPill status={device} />
             ) : (
@@ -252,7 +238,7 @@ export function CrewMemberScreen({
           <div className="grid items-start gap-4 lg:grid-cols-2">
             <Card className="p-5">
               <CardTitle className="text-sm font-normal text-muted">Frecuencia cardíaca</CardTitle>
-              <p className="mt-2 text-4xl font-semibold tracking-tight tabular-nums">
+              <p className="mt-2 text-3xl font-semibold tracking-heading tabular-nums">
                 {hr?.latest_bpm == null ? "Sin dato" : formatValue(hr.latest_bpm)}
                 {hr?.latest_bpm != null && (
                   <span className="ml-1.5 text-base font-normal text-muted">lpm</span>
@@ -302,7 +288,7 @@ export function CrewMemberScreen({
               />
             ) : (
               <Card className="p-4">
-                <CardTitle>Último análisis</CardTitle>
+                <CardTitle>Pulsera ahora</CardTitle>
                 <p className="mt-3 text-sm text-muted">Sin análisis en este periodo.</p>
               </Card>
             )}

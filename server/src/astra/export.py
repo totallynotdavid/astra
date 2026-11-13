@@ -37,6 +37,7 @@ from astra.contract import (
     ReasonCode,
     Session,
     Source,
+    UserRole,
 )
 from astra.hub import Hub
 from astra.ingest import DISCONNECT_AFTER, STALE_AFTER, Pipeline
@@ -382,6 +383,7 @@ def export_mission(path: Path, start: datetime = DEFAULT_START) -> MissionExport
                 comment,
                 action,
                 SAMPLE_REVIEWER,
+                UserRole.DOCTOR,
                 reviewed + timedelta(minutes=step),
             )
 

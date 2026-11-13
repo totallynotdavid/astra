@@ -335,6 +335,7 @@ class NewModelRun(Model):
     modality: Modality
     crew_member_id: str | None = None
     scenario: str | None = None
+    input_duration_s: Annotated[float, Field(gt=0)] | None = None
     started_at: AwareDatetime
     completed_at: AwareDatetime | None = None
     findings: list[NewFinding] = []
@@ -349,6 +350,7 @@ class ModelRun(Model):
     modality: Modality
     crew_member_id: str | None
     scenario: str | None
+    input_duration_s: float | None
     started_at: AwareDatetime
     completed_at: AwareDatetime | None
     findings: list[Finding]
@@ -383,6 +385,13 @@ class Alert(Model):
     finding_ids: list[int]
 
 
+class UserRole(StrEnum):
+    ADMIN = "admin"
+    DOCTOR = "doctor"
+    ASTRONAUT = "astronaut"
+    JURY = "jury"
+
+
 class AlertReview(Model):
     id: int
     alert_id: int
@@ -391,6 +400,7 @@ class AlertReview(Model):
     comment: str
     action: str | None
     actor: str
+    actor_role: UserRole
 
 
 class AlertReviewRequest(Model):
@@ -399,13 +409,6 @@ class AlertReviewRequest(Model):
     status: AlertStatus
     comment: str = ""
     action: str | None = None
-
-
-class UserRole(StrEnum):
-    ADMIN = "admin"
-    DOCTOR = "doctor"
-    ASTRONAUT = "astronaut"
-    JURY = "jury"
 
 
 Username = Annotated[

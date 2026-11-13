@@ -51,6 +51,20 @@ def test_an_unmapped_speaker_has_no_crew_member() -> None:
     assert [finding.crew_member_id for finding in findings] == [None]
 
 
+@pytest.mark.parametrize("scenario", ("isolation", "distress-phrase", "interruptions"))
+def test_finding_text_names_a_voice_without_an_internal_id_or_a_disclaimer(
+    scenario: str,
+) -> None:
+    findings = analyze(simulate(scenario).segments)
+
+    assert findings
+    for finding in findings:
+        text = finding.evidence.description
+        assert text.startswith("Una voz sin asignar")
+        assert "SPEAKER" not in text
+        assert "revis" not in text
+
+
 def _talk(speaker: str, start: float, end: float, text: str = "Hola.") -> Segment:
     return Segment(speaker=speaker, start_s=start, end_s=end, text=text)
 

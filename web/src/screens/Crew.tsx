@@ -1,6 +1,5 @@
 import { CrewCard } from "../components/CrewCard";
 import { PageHead } from "../components/PageHead";
-import { SimulatedNote } from "../components/SimulatedNote";
 import { SourceBadge } from "../components/SourceBadge";
 import { EmptyView, ErrorView, LoadingView } from "../components/StateView";
 import { describeHealth, toneClass } from "../health";
@@ -51,15 +50,7 @@ export function Crew({
       <PageHead
         title="Tripulación"
         note={note}
-        aside={
-          uniform ? (
-            recorded && uniform !== "LIVE" ? (
-              <SimulatedNote />
-            ) : (
-              <SourceBadge source={uniform} />
-            )
-          ) : undefined
-        }
+        aside={uniform && !recorded ? <SourceBadge source={uniform} /> : undefined}
       />
       {problems.length > 0 && (
         <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm">

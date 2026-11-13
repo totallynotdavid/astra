@@ -171,3 +171,31 @@ def test_events_newest_first_and_filterable(tmp_path: Path) -> None:
 
 def test_check_writes(tmp_path: Path) -> None:
     assert Store(str(tmp_path / "a.sqlite3")).check() is True
+
+
+def test_an_older_database_gains_the_new_columns(tmp_path: Path) -> None:
+    path = str(tmp_path / "old.sqlite3")
+    db = sqlite3.connect(path)
+    db.executescript(
+        "CREATE TABLE users (id TEXT PRIMARY KEY, username TEXT NOT NULL UNIQUE,"
+        " role TEXT NOT NULL, crew_member_id TEXT, password_hash TEXT NOT NULL,"
+        " active INTEGER NOT NULL, created_at TEXT NOT NULL);"
+        "CREATE TABLE alert_reviews (id INTEGER PRIMARY KEY, alert_id INTEGER"
+        " NOT NULL, created_at TEXT NOT NULL, status TEXT NOT NULL, comment TEXT"
+        " NOT NULL, action TEXT, actor TEXT NOT NULL);"
+        "CREATE TABLE model_runs (id INTEGER PRIMARY KEY, model_name TEXT NOT NULL);"
+        "INSERT INTO users VALUES ('u1', 'ana', 'admin', NULL, 'x', 1, '');"
+        "INSERT INTO alert_reviews VALUES (1, 1, '', 'acknowledged', '', NULL, 'ana');"
+        "INSERT INTO alert_reviews VALUES (2, 1, '', 'acknowledged', '', NULL, 'gone');"
+    )
+    db.commit()
+    db.close()
+
+    Store(path).close()
+
+    db = sqlite3.connect(path)
+    roles = db.execute("SELECT actor_role FROM alert_reviews ORDER BY id").fetchall()
+    run_columns = {row[1] for row in db.execute("PRAGMA table_info(model_runs)")}
+    db.close()
+    assert roles == [("admin",), ("doctor",)]
+    assert "input_duration_s" in run_columns

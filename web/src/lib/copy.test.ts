@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import {
   linkStatusText,
-  methodText,
   missingReasonText,
   noReadingsText,
   ppgContactText,
@@ -23,7 +22,6 @@ const maps = {
   linkStatusText,
   noReadingsText,
   riskLevelText,
-  methodText,
   severityText,
   ppgContactText,
 };

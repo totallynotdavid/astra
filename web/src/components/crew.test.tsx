@@ -181,6 +181,7 @@ describe("alert list", () => {
       comment: "Revisado desde otra pantalla",
       action: null,
       actor: "Rosa",
+      actor_role: "admin" as const,
       created_at: "2026-11-11T10:09:00Z",
     };
     let trail: (typeof remote)[] = [];
@@ -213,6 +214,7 @@ describe("overlapping requests", () => {
     comment: "Se confirmó con la persona",
     action: null,
     actor: "Diego",
+    actor_role: "doctor" as const,
     created_at: "2026-11-11T10:05:00Z",
   };
 
@@ -275,6 +277,7 @@ describe("alert review", () => {
             comment: "Visto en cabina",
             action: null,
             actor: "Diego",
+            actor_role: "doctor" as const,
             created_at: "2026-11-11T10:02:00Z",
           },
         ]),
@@ -295,9 +298,11 @@ describe("alert review", () => {
     expect(screen.queryByRole("button", { name: "Confirmar" })).toBeNull();
     expect(screen.getByText("Patrón de posible caída")).toBeTruthy();
     expect(screen.getByText("Silencio prolongado")).toBeTruthy();
-    expect(screen.getByText("82%".replace("82", "confianza 82"))).toBeTruthy();
+    expect(screen.queryByText(/confianza/)).toBeNull();
     expect(screen.getByText("Historial de revisiones")).toBeTruthy();
     expect(screen.getByText("Visto en cabina")).toBeTruthy();
+    expect(screen.getByText("Médico")).toBeTruthy();
+    expect(screen.queryByText("Diego")).toBeNull();
   });
 
   it("posts a review and shows it in the trail with the new status", async () => {
@@ -309,6 +314,7 @@ describe("alert review", () => {
       comment: "Se confirmó con la persona",
       action: "Revisión visual",
       actor: "Diego",
+      actor_role: "doctor" as const,
       created_at: "2026-11-11T10:05:00Z",
     };
     const postReview = vi.fn(async (_id: number, _req: AlertReviewRequest) => review);
@@ -322,7 +328,7 @@ describe("alert review", () => {
         reviewer="Diego"
       />,
     );
-    expect(screen.getByText("Se registra a nombre de Diego.")).toBeTruthy();
+    expect(screen.getByText("Se registra como Diego.")).toBeTruthy();
     expect(screen.queryByLabelText("Quién revisa")).toBeNull();
     fireEvent.change(screen.getByLabelText("Comentario"), {
       target: { value: "Se confirmó con la persona" },

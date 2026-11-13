@@ -27,7 +27,7 @@ export function SystemStatus({
     <Card className="h-fit">
       <div className="flex items-center justify-between gap-2">
         <CardTitle>Estado del sistema</CardTitle>
-        <LinkPill status={device} replay={replay} />
+        {replay !== "idle" && <LinkPill status={device} replay={replay} />}
       </div>
       <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-sm">
         <dt className="text-muted">Dispositivo</dt>

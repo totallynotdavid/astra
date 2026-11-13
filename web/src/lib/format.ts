@@ -23,12 +23,22 @@ export function formatDateTime(iso: string | null): string {
   return Number.isNaN(t) ? "Sin registro" : dateTimeFormat.format(t);
 }
 
-export function formatDuration(startIso: string, endIso: string | null): string {
-  if (!endIso) return "En curso";
-  const seconds = Math.round((Date.parse(endIso) - Date.parse(startIso)) / 1000);
-  if (Number.isNaN(seconds)) return "Sin registro";
+export function formatSeconds(totalSeconds: number): string {
+  const seconds = Math.round(totalSeconds);
   const minutes = Math.floor(seconds / 60);
   return minutes > 0 ? `${minutes} min ${seconds % 60} s` : `${seconds} s`;
+}
+
+export function formatDuration(startIso: string, endIso: string | null): string {
+  if (!endIso) return "En curso";
+  const seconds = (Date.parse(endIso) - Date.parse(startIso)) / 1000;
+  return Number.isNaN(seconds) ? "Sin registro" : formatSeconds(seconds);
+}
+
+const nameList = new Intl.ListFormat("es", { style: "long", type: "conjunction" });
+
+export function formatList(items: string[]): string {
+  return nameList.format(items);
 }
 
 export function formatClock(seconds: number): string {
