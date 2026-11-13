@@ -301,6 +301,7 @@ class AlertReview(BaseModel):
     )
     action: str | None = Field(..., title="Action")
     actor: str = Field(..., title="Actor")
+    actor_role: UserRole
     alert_id: int = Field(..., title="Alert Id")
     comment: str = Field(..., title="Comment")
     created_at: AwareDatetime = Field(..., title="Created At")
@@ -478,6 +479,7 @@ class ModelRun(BaseModel):
     crew_member_id: str | None = Field(..., title="Crew Member Id")
     findings: list[Finding] = Field(..., title="Findings")
     id: int = Field(..., title="Id")
+    input_duration_s: float | None = Field(..., title="Input Duration S")
     modality: Modality
     model_name: str = Field(..., title="Model Name")
     model_version: str = Field(..., title="Model Version")
@@ -504,6 +506,7 @@ class NewModelRun(BaseModel):
     findings: list[NewFinding] | None = Field(
         [], title="Findings", validate_default=True
     )
+    input_duration_s: PositiveFloat | None = Field(None, title="Input Duration S")
     modality: Modality
     model_name: str = Field(..., title="Model Name")
     model_version: str = Field(..., title="Model Version")

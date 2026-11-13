@@ -97,6 +97,9 @@
             "title": "Actor",
             "type": "string"
           },
+          "actor_role": {
+            "$ref": "#/components/schemas/UserRole"
+          },
           "alert_id": {
             "title": "Alert Id",
             "type": "integer"
@@ -125,7 +128,8 @@
           "status",
           "comment",
           "action",
-          "actor"
+          "actor",
+          "actor_role"
         ],
         "title": "AlertReview",
         "type": "object"
@@ -1230,6 +1234,17 @@
             "title": "Id",
             "type": "integer"
           },
+          "input_duration_s": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Duration S"
+          },
           "modality": {
             "$ref": "#/components/schemas/Modality"
           },
@@ -1273,6 +1288,7 @@
           "modality",
           "crew_member_id",
           "scenario",
+          "input_duration_s",
           "started_at",
           "completed_at",
           "findings"
@@ -1402,6 +1418,18 @@
             },
             "title": "Findings",
             "type": "array"
+          },
+          "input_duration_s": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Duration S"
           },
           "modality": {
             "$ref": "#/components/schemas/Modality"
