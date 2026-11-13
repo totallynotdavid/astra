@@ -10,7 +10,7 @@ const labs: LabModality[] = ["video", "audio"];
 
 function percent(row: LabelTally): string {
   const reviewed = row.confirmed + row.dismissed;
-  return reviewed === 0 ? "Sin revisar" : `${Math.round((row.confirmed / reviewed) * 100)}%`;
+  return reviewed === 0 ? "Sin datos" : `${Math.round((row.confirmed / reviewed) * 100)}%`;
 }
 
 function plural(count: number, one: string, many: string): string {
@@ -31,14 +31,8 @@ function Lab({ evaluation }: { evaluation: LabEvaluation }) {
         )}
         : {evaluation.withFindings} con hallazgos y {evaluation.withoutFindings} sin hallazgos.
         {quiet.length > 0 &&
-          ` Sin hallazgos es lo esperado en ${quiet.map((scenario) => scenario.title).join(", ")}.`}
+          ` Señales falsas: ${evaluation.falseSignals} en ${plural(evaluation.quietRuns, "ejecución", "ejecuciones")} de ${quiet.map((scenario) => scenario.title).join(", ")}.`}
       </p>
-      {quiet.length > 0 && (
-        <p className="mt-1 text-sm text-muted">
-          {plural(evaluation.quietRuns, "ejecución", "ejecuciones")} de escenarios sin hallazgo
-          esperado. Señales falsas: {evaluation.falseSignals}.
-        </p>
-      )}
       {evaluation.unscored > 0 && (
         <p className="mt-1 text-sm text-muted">
           {plural(
@@ -46,7 +40,7 @@ function Lab({ evaluation }: { evaluation: LabEvaluation }) {
             "ejecución sin escenario conocido no cuenta",
             "ejecuciones sin escenario conocido no cuentan",
           )}{" "}
-          para los omitidos ni las señales falsas.
+          para los no detectados ni las señales falsas.
         </p>
       )}
       {(evaluation.failed > 0 || evaluation.unavailable > 0 || evaluation.otherSource > 0) && (
@@ -64,28 +58,28 @@ function Lab({ evaluation }: { evaluation: LabEvaluation }) {
           <thead>
             <tr className="border-b border-border text-left text-xs text-muted">
               <th scope="col" className="py-2 pr-3 font-normal">
-                Etiqueta
+                Patrón
               </th>
               <th scope="col" className="py-2 pr-3 text-right font-normal">
-                Ejecuciones
+                Pruebas
               </th>
               <th scope="col" className="py-2 pr-3 text-right font-normal">
-                Omitidos
+                No detectados
               </th>
               <th scope="col" className="py-2 pr-3 text-right font-normal">
-                Hallazgos
+                Detectados
               </th>
               <th scope="col" className="py-2 pr-3 text-right font-normal">
-                Verdaderos
+                Confirmados
               </th>
               <th scope="col" className="py-2 pr-3 text-right font-normal">
-                Falsos
+                Descartados
               </th>
               <th scope="col" className="py-2 pr-3 text-right font-normal">
                 Sin revisar
               </th>
               <th scope="col" className="py-2 text-right font-normal">
-                Confirmados
+                % confirmado
               </th>
             </tr>
           </thead>
@@ -143,16 +137,12 @@ export function Evaluation({ crew, source }: { crew: CrewState; source: AstraSou
       <Card className="p-4">
         <CardTitle>Cómo se calcula</CardTitle>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted">
-          <li>Solo se cuentan las ejecuciones con entrada simulada y completadas.</li>
-          <li>
-            Un hallazgo es verdadero si el médico lo confirmó y falso si lo descartó. Los demás
-            esperan revisión. Confirmados es la parte de los revisados que el médico confirmó.
-          </li>
-          <li>
-            Cada ejecución guarda el escenario simulado que la generó. Un escenario omite su
-            etiqueta cuando la ejecución no la produjo. Un hallazgo en un escenario sin hallazgo
-            esperado es una señal falsa.
-          </li>
+          <li>Solo cuentan las ejecuciones simuladas y completadas.</li>
+          <li>Cada prueba parte de un escenario con un patrón plantado.</li>
+          <li>Si la ejecución no encuentra ese patrón, cuenta como no detectado.</li>
+          <li>El médico confirma o descarta cada hallazgo. Los demás quedan sin revisar.</li>
+          <li>Un hallazgo en un escenario sin patrón plantado es una señal falsa.</li>
+          <li>El porcentaje es la parte de los revisados que el médico confirmó.</li>
         </ul>
       </Card>
       {evaluations.map((evaluation) => (

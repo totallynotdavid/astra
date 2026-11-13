@@ -4,7 +4,6 @@ import { InsightHistory } from "../components/InsightHistory";
 import { MeasurementChart } from "../components/MeasurementChart";
 import { MetricCard } from "../components/MetricCard";
 import { PageHead } from "../components/PageHead";
-import { SimulatedNote } from "../components/SimulatedNote";
 import { SourceBadge } from "../components/SourceBadge";
 import { EmptyView } from "../components/StateView";
 import { SystemStatus } from "../components/SystemStatus";
@@ -123,64 +122,60 @@ export function Senales({
         title="Señales"
         note={
           replay
-            ? "Estas lecturas vienen de una sesión reproducida, no de un enlace en vivo."
+            ? readings.length > 0
+              ? "Estas lecturas vienen de una sesión reproducida, no de un enlace en vivo."
+              : undefined
             : "Últimas lecturas del dispositivo y el análisis que ASTRA produce sobre ellas."
         }
-        aside={
-          uniform ? (
-            replayOnly && uniform !== "LIVE" ? (
-              <SimulatedNote />
-            ) : (
-              <SourceBadge source={uniform} />
-            )
-          ) : undefined
-        }
+        aside={uniform && !replayOnly ? <SourceBadge source={uniform} /> : undefined}
       />
       {body}
-      <div className="grid items-start gap-4 lg:grid-cols-[2fr_1fr]">
-        <div
-          className={
-            analysis
-              ? "space-y-4 lg:col-start-2 lg:row-start-1"
-              : "grid items-start gap-4 lg:col-span-2 lg:grid-cols-3"
-          }
-        >
-          <SystemStatus
-            health={state.health}
-            device={device}
-            deviceId={deviceId}
-            latest={latest}
-            replay={replay}
-          />
-          <Card>
-            <CardTitle>Alertas abiertas</CardTitle>
-            {alerts.length > 0 ? (
-              <EventList events={alerts} />
-            ) : (
-              <p className="mt-3 text-sm text-muted">Sin alertas abiertas.</p>
-            )}
-          </Card>
-          <Card>
-            <CardTitle>Eventos</CardTitle>
-            <div className="mt-2">
-              <EventList events={state.events} shown={10} />
-            </div>
-          </Card>
-        </div>
-        {analysis && (
-          <div className="space-y-4 lg:col-start-1 lg:row-start-1">
-            {latestInsight ? (
-              <InsightCard insight={latestInsight} source={sourceOf?.(latestInsight) ?? null} />
-            ) : (
-              <Card>
-                <CardTitle>Último análisis</CardTitle>
-                <p className="mt-3 text-sm text-muted">Todavía no hay análisis.</p>
-              </Card>
-            )}
-            {earlier.length > 0 && <InsightHistory insights={earlier} sourceOf={sourceOf} />}
+      {!(replay === "idle" && !analysis) && (
+        <div className="grid items-start gap-4 lg:grid-cols-[2fr_1fr]">
+          <div
+            className={
+              analysis
+                ? "space-y-4 lg:col-start-2 lg:row-start-1"
+                : "grid items-start gap-4 lg:col-span-2 lg:grid-cols-3"
+            }
+          >
+            <SystemStatus
+              health={state.health}
+              device={device}
+              deviceId={deviceId}
+              latest={latest}
+              replay={replay}
+            />
+            <Card>
+              <CardTitle>Alertas abiertas</CardTitle>
+              {alerts.length > 0 ? (
+                <EventList events={alerts} />
+              ) : (
+                <p className="mt-3 text-sm text-muted">Sin alertas abiertas.</p>
+              )}
+            </Card>
+            <Card>
+              <CardTitle>Eventos</CardTitle>
+              <div className="mt-2">
+                <EventList events={state.events} shown={10} />
+              </div>
+            </Card>
           </div>
-        )}
-      </div>
+          {analysis && (
+            <div className="space-y-4 lg:col-start-1 lg:row-start-1">
+              {latestInsight ? (
+                <InsightCard insight={latestInsight} source={sourceOf?.(latestInsight) ?? null} />
+              ) : (
+                <Card>
+                  <CardTitle>Pulsera ahora</CardTitle>
+                  <p className="mt-3 text-sm text-muted">Todavía no hay análisis.</p>
+                </Card>
+              )}
+              {earlier.length > 0 && <InsightHistory insights={earlier} sourceOf={sourceOf} />}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

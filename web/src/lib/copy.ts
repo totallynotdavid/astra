@@ -5,7 +5,6 @@ type MissingReason = components["schemas"]["MissingReason"];
 type Source = components["schemas"]["Source"];
 type LinkStatus = components["schemas"]["LinkStatus"];
 type RiskLevel = components["schemas"]["RiskLevel"];
-type Method = components["schemas"]["Method"];
 type Severity = components["schemas"]["Severity"];
 type PpgContact = components["schemas"]["PpgContact"];
 type CrewRole = components["schemas"]["CrewRole"];
@@ -87,11 +86,6 @@ export const riskLevelText: Record<RiskLevel, string> = {
   unavailable: "No disponible",
 };
 
-export const methodText: Record<Method, string> = {
-  rules: "Análisis por reglas",
-  ml: "Análisis por modelo",
-};
-
 export const severityText: Record<Severity, string> = {
   info: "Información",
   review: "Revisar",
@@ -146,7 +140,7 @@ export const reviewStatusText: Record<ReviewStatus, string> = {
 };
 
 export const modalityText: Record<Modality, string> = {
-  wearable: "Dispositivo",
+  wearable: "Pulsera",
   video: "Vídeo",
   audio: "Audio",
 };

@@ -3,7 +3,6 @@ import { useState } from "react";
 
 import { PageHead } from "../components/PageHead";
 import { SourceBadge } from "../components/SourceBadge";
-import { SimulatedNote } from "../components/SimulatedNote";
 import { EmptyView } from "../components/StateView";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
@@ -53,20 +52,8 @@ export function Sesiones({
     <div className="space-y-8">
       <PageHead
         title="Sesiones"
-        note={
-          replay === "playing"
-            ? replayPhaseText.playing
-            : "Reproduce una sesión grabada. Sus lecturas nunca se muestran como en vivo."
-        }
-        aside={
-          uniform ? (
-            source.replayOnly && uniform !== "LIVE" ? (
-              <SimulatedNote />
-            ) : (
-              <SourceBadge source={uniform} />
-            )
-          ) : undefined
-        }
+        note={replay === "playing" ? replayPhaseText.playing : "Reproduce una sesión grabada."}
+        aside={uniform && !source.replayOnly ? <SourceBadge source={uniform} /> : undefined}
       />
       {sessions.length === 0 ? (
         <Card>
@@ -77,8 +64,8 @@ export function Sesiones({
       ) : (
         <Card className="p-0">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-3">
-            <span className="text-sm text-muted">
-              {sessions.length} {sessions.length === 1 ? "sesión" : "sesiones"}
+            <span aria-hidden="true" className="text-sm text-muted">
+              Velocidad
             </span>
             <Segmented label="Velocidad">
               {source.speeds.map((s) => (

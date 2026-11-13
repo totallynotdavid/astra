@@ -63,7 +63,7 @@ export function MetricCard({
       </div>
       <p
         className={cn(
-          "mt-3 text-3xl font-semibold tracking-tight tabular-nums",
+          "mt-3 text-3xl font-semibold tracking-heading tabular-nums",
           outdated && "text-muted",
         )}
       >

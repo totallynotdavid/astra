@@ -41,10 +41,7 @@ export function Login({
 
   return (
     <main id="main" className="mx-auto flex min-h-screen max-w-sm flex-col justify-center p-6">
-      <div className="mb-6 leading-tight">
-        <p className="text-base font-semibold tracking-wide">ASTRA</p>
-        <p className="text-sm text-muted">Señala patrones para revisión</p>
-      </div>
+      <p className="mb-6 text-base font-semibold">ASTRA</p>
       <Card className="p-6">
         <h1 className="text-xl font-semibold">Iniciar sesión</h1>
         <form onSubmit={(e) => void submit(e)} className="mt-4">

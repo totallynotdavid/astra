@@ -12,6 +12,8 @@
   --text-2xl: 2rem;
   --text-3xl: 2.5rem;
 
+  --tracking-heading: -0.01em;
+
   --radius-sm: 10px;
   --radius-panel: 20px;
 
@@ -99,6 +101,32 @@ h3 {
   to {
     opacity: 1;
     transform: none;
+  }
+}
+
+@property --scroll-fade {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@keyframes scroll-fade-x {
+  from {
+    --scroll-fade: 2rem;
+  }
+  to {
+    --scroll-fade: 0px;
+  }
+}
+
+.scroll-fade-x {
+  mask-image: linear-gradient(to right, black calc(100% - var(--scroll-fade)), transparent);
+}
+
+@supports (animation-timeline: scroll()) {
+  .scroll-fade-x {
+    animation: scroll-fade-x linear both;
+    animation-timeline: scroll(self inline);
   }
 }
 

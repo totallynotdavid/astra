@@ -9,8 +9,7 @@ const copy = {
   empty:
     "Cuando el laboratorio de vídeo publique una ejecución, aparecerá aquí con sus hallazgos y su línea de tiempo.",
   unavailable: "Esta fuente de datos no tiene servidor, así que no hay ejecuciones de vídeo.",
-  notice:
-    "ASTRA señala patrones de movimiento para que una persona los revise. No diagnostica nada.",
+  runTitle: "Análisis de vídeo",
 };
 
 function playable(reference: string): boolean {

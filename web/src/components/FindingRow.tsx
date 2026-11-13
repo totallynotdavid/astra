@@ -48,9 +48,6 @@ export function FindingRow({
         <span className="text-sm text-muted tabular-nums">
           de {formatClock(finding.start_s)} a {formatClock(finding.end_s)}
         </span>
-        <span className="text-xs text-muted tabular-nums">
-          confianza {Math.round(finding.confidence * 100)}%
-        </span>
         {finding.review_status !== "pending" && (
           <Badge variant={reviewVariant[finding.review_status]}>
             {reviewStatusText[finding.review_status]}

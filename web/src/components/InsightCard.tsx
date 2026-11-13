@@ -1,9 +1,8 @@
 import type { components } from "../contract/api";
-import { methodText, reasonCodeText, riskLevelText } from "../lib/copy";
-import { formatTime } from "../lib/format";
+import { reasonCodeText, riskLevelText } from "../lib/copy";
 import { SourceBadge } from "./SourceBadge";
 import { Badge } from "./ui/badge";
-import { Card } from "./ui/card";
+import { Card, CardTitle } from "./ui/card";
 
 type Insight = components["schemas"]["Insight"];
 type Source = components["schemas"]["Source"];
@@ -18,11 +17,9 @@ export function InsightCard({ insight, source }: { insight: Insight; source: Sou
   return (
     <Card className="p-4">
       <div className="flex flex-wrap items-center gap-2">
+        <CardTitle>Pulsera ahora</CardTitle>
         <Badge variant={riskVariant[insight.risk_level]}>{riskLevelText[insight.risk_level]}</Badge>
         {source && <SourceBadge source={source} />}
-        <span className="ml-auto text-xs text-muted tabular-nums">
-          {methodText[insight.method]} · {formatTime(insight.created_at)}
-        </span>
       </div>
       {insight.risk_level === "unavailable" && (
         <p className="mt-3 text-sm text-review">Modelo no disponible.</p>
@@ -35,7 +32,7 @@ export function InsightCard({ insight, source }: { insight: Insight; source: Sou
         </ul>
       )}
       {insight.reason_codes.length === 0 && insight.risk_level === "normal" && (
-        <p className="mt-3 text-sm text-muted">Sin patrones que revisar.</p>
+        <p className="mt-3 text-sm text-muted">La última lectura no señala patrones.</p>
       )}
       {insight.limitations.length > 0 && (
         <div className="mt-3 border-t border-border pt-3">

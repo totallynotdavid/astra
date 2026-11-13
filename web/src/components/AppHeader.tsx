@@ -1,6 +1,6 @@
 import type { components } from "../contract/api";
 import type { ChannelState, User } from "../data/source";
-import { canReplay, ownProfile, userRoleText } from "../lib/access";
+import { canReplay, ownProfile } from "../lib/access";
 import type { ReplayPhase } from "../lib/status";
 import { cn } from "../lib/utils";
 import { LinkPill } from "./LinkPill";
@@ -61,13 +61,12 @@ export function AppHeader({
   return (
     <header className="sticky top-0 z-10 border-b border-border bg-surface/90 backdrop-blur-sm">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 sm:px-6 md:h-16 md:flex-nowrap md:py-0">
-        <a href="#/" className="flex shrink-0 flex-col leading-tight">
-          <span className="text-base font-semibold tracking-tight">ASTRA</span>
-          <span className="hidden text-xs text-muted 2xl:block">Señala patrones para revisión</span>
+        <a href="#/" className="shrink-0 text-base font-semibold">
+          ASTRA
         </a>
         <nav
           aria-label="Pantallas"
-          className="order-last -mx-1 flex w-full min-w-0 items-center gap-0.5 overflow-x-auto px-1 whitespace-nowrap md:order-none md:mx-0 md:h-full md:w-auto md:flex-1 md:px-0"
+          className="scroll-fade-x order-last -mx-1 flex w-full min-w-0 items-center gap-0.5 overflow-x-auto px-1 whitespace-nowrap md:order-none md:mx-0 md:h-full md:w-auto md:flex-1 md:px-0"
         >
           {nav.map((link) => (
             <a
@@ -90,17 +89,14 @@ export function AppHeader({
         <div className="ml-auto flex items-center gap-3">
           {channel !== "open" && <output className="text-xs text-review">Reconectando…</output>}
           {replay !== "idle" && <LinkPill status={device} replay={replay} />}
-          <div className="flex items-center gap-2 border-l border-border pl-3">
-            <p className="hidden flex-col text-right text-xs leading-tight md:flex">
-              {onLogout && <span className="text-text">{user.username}</span>}
-              <span className="text-muted">{userRoleText[user.role]}</span>
-            </p>
-            {onLogout && (
+          {onLogout && (
+            <div className="flex items-center gap-2">
+              <span className="hidden text-sm text-text md:inline">{user.username}</span>
               <Button variant="ghost" className="h-8 px-2.5 text-sm" onClick={onLogout}>
                 Cerrar sesión
               </Button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </header>
