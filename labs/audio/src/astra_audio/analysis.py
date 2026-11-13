@@ -95,7 +95,7 @@ def _talk_time(
 
 
 def _name(speaker: str, crew: Mapping[str, str]) -> str:
-    return crew.get(speaker, speaker)
+    return crew.get(speaker, "Una voz sin asignar")
 
 
 def _clock(seconds: float) -> str:
@@ -185,8 +185,7 @@ def _isolation_finding(
             description=(
                 f"{_name(speaker, crew)} habló el {own:.0f} % del tiempo de voz "
                 f"entre {_clock(start_s)} y {_clock(end_s)}, frente a una media "
-                f"del {others:.0f} % de cada una de las demás personas. "
-                "Es un patrón para que una persona lo revise."
+                f"del {others:.0f} % de cada una de las demás personas."
             )
         ),
     )
@@ -210,8 +209,7 @@ def _find_long_silences(segments: Sequence[Segment]) -> list[NewFinding]:
                         description=(
                             f"Nadie habló entre {_clock(spoken_until)} y "
                             f"{_clock(segment.start_s)}: {gap:.0f} s sin voz en la "
-                            "conversación. Es un patrón para que una persona lo "
-                            "revise."
+                            "conversación."
                         )
                     ),
                 )
@@ -280,8 +278,7 @@ def _find_interruptions(
                         description=(
                             f"{_name(speaker, crew)} empezó a hablar mientras otra "
                             f"persona hablaba {len(group)} veces entre "
-                            f"{_clock(start_s)} y {_clock(end_s)}. Es un patrón "
-                            "para que una persona lo revise."
+                            f"{_clock(start_s)} y {_clock(end_s)}."
                         )
                     ),
                 )
@@ -329,9 +326,7 @@ def _find_distress_phrases(
                 evidence=Evidence(
                     description=(
                         f"{_name(segment.speaker, crew)} dijo {quoted} a las "
-                        f"{_clock(segment.start_s)}: «{segment.text.strip(' .!?')}». Es una "
-                        "coincidencia de palabras, no una valoración del tono. "
-                        "Una persona debe revisarla."
+                        f"{_clock(segment.start_s)}: «{segment.text.strip(' .!?')}»."
                     )
                 ),
             )

@@ -26,6 +26,11 @@ ISOLATION_MIN_DISTANCE = 0.30
 ISOLATION_WINDOW_S = 5.0
 
 
+def _seconds(value: float) -> str:
+    # Evidence is Spanish copy, so the decimal separator is a comma.
+    return f"{value:.1f}".replace(".", ",")
+
+
 def analyze(
     track: PoseTrack, crew_by_track: Mapping[int, str] | None = None
 ) -> list[NewFinding]:
@@ -34,9 +39,23 @@ def analyze(
     findings.extend(_find_falls(track, crew))
     findings.extend(_find_abrupt_movements(track, crew, findings))
     findings.extend(_find_inactivity(track, crew))
-    findings.extend(_find_interactions(track))
+    findings.extend(_find_interactions(track, crew))
     findings.extend(_find_isolation(track, crew))
     return sorted(findings, key=lambda finding: (finding.start_s, finding.label.value))
+
+
+def _who(track_id: int, crew: Mapping[int, str]) -> str:
+    return crew.get(track_id, "Una persona sin asignar")
+
+
+def _pair(left_id: int, right_id: int, crew: Mapping[int, str]) -> str:
+    left = crew.get(left_id)
+    right = crew.get(right_id)
+    if left and right:
+        return f"{left} y {right}"
+    if left or right:
+        return f"{left or right} y una persona sin asignar"
+    return "Dos personas sin asignar"
 
 
 def _find_falls(track: PoseTrack, crew: Mapping[int, str]) -> list[NewFinding]:
@@ -85,8 +104,8 @@ def _find_falls(track: PoseTrack, crew: Mapping[int, str]) -> list[NewFinding]:
                     end_s=track.frames[hold_end].timestamp_s,
                     evidence=Evidence(
                         description=(
-                            f"El track {track_id} descendió a {drop_speed:.2f} por segundo "
-                            f"y terminó horizontal cerca del suelo durante {hold_s:.1f} segundos."
+                            f"{_who(track_id, crew)} bajó de golpe y siguió en posición "
+                            f"horizontal cerca del suelo durante {_seconds(hold_s)} segundos."
                         ),
                         media_ref=None,
                     ),
@@ -147,8 +166,8 @@ def _find_abrupt_movements(
                     end_s=timestamp,
                     evidence=Evidence(
                         description=(
-                            f"El movimiento del track {track_id} alcanzó {speed:.2f} por segundo, "
-                            f"muy por encima de su movimiento reciente."
+                            f"{_who(track_id, crew)} hizo un movimiento mucho más rápido "
+                            f"que los anteriores."
                         ),
                         media_ref=None,
                     ),
@@ -188,8 +207,8 @@ def _find_inactivity(track: PoseTrack, crew: Mapping[int, str]) -> list[NewFindi
                             end_s=track.frames[index].timestamp_s,
                             evidence=Evidence(
                                 description=(
-                                    f"El track {track_id} mostró casi ningún movimiento "
-                                    f"durante {duration:.1f} segundos."
+                                    f"{_who(track_id, crew)} casi no se movió "
+                                    f"durante {_seconds(duration)} segundos."
                                 ),
                                 media_ref=None,
                             ),
@@ -201,7 +220,7 @@ def _find_inactivity(track: PoseTrack, crew: Mapping[int, str]) -> list[NewFindi
     return findings
 
 
-def _find_interactions(track: PoseTrack) -> list[NewFinding]:
+def _find_interactions(track: PoseTrack, crew: Mapping[int, str]) -> list[NewFinding]:
     findings: list[NewFinding] = []
     ids = sorted(_people_by_track(track.frames))
     positions = {
@@ -244,9 +263,8 @@ def _find_interactions(track: PoseTrack) -> list[NewFinding]:
                                 end_s=track.frames[index].timestamp_s,
                                 evidence=Evidence(
                                     description=(
-                                        f"Los tracks {left_id} y {right_id} permanecieron "
-                                        f"a menos de {INTERACTION_MAX_DISTANCE:.2f} durante "
-                                        f"{duration:.1f} segundos."
+                                        f"{_pair(left_id, right_id, crew)} "
+                                        f"estuvieron muy cerca durante {_seconds(duration)} segundos."
                                     ),
                                     media_ref=None,
                                 ),
@@ -302,9 +320,8 @@ def _find_isolation(track: PoseTrack, crew: Mapping[int, str]) -> list[NewFindin
                             end_s=track.frames[index].timestamp_s,
                             evidence=Evidence(
                                 description=(
-                                    f"El track {track_id} quedó a más de "
-                                    f"{ISOLATION_MIN_DISTANCE:.2f} de cualquier otro "
-                                    f"durante {duration:.1f} segundos."
+                                    f"{_who(track_id, crew)} estuvo lejos de las demás "
+                                    f"personas durante {_seconds(duration)} segundos."
                                 ),
                                 media_ref=None,
                             ),
